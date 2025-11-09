@@ -12,6 +12,7 @@ pub struct KeyboardRunner {
     enigo: Arc<Mutex<Enigo>>,
 }
 
+#[cfg(not(feature = "tauri"))]
 impl Default for KeyboardRunner {
     fn default() -> Self {
         Self::new()

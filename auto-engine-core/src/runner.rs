@@ -34,6 +34,7 @@ pub struct ActionRunner {
     image_recognition: ImageRecognition,
 }
 
+#[cfg(not(feature = "tauri"))]
 impl Default for ActionRunner {
     fn default() -> Self {
         Self::new()
