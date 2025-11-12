@@ -120,33 +120,47 @@ macro_rules! map_keys {
     };
 }
 
+#[cfg(target_os = "windows")]
+macro_rules! key_for {
+    ($ch:ident) => {
+        Key::$ch
+    };
+}
+
+#[cfg(not(target_os = "windows"))]
+macro_rules! key_for {
+    ($ch:ident) => {
+        Key::Unicode(stringify!($ch).chars().next().unwrap())
+    };
+}
+
 map_keys! {
-    A => Key::Unicode('A'),
-    B => Key::Unicode('B'),
-    C => Key::Unicode('C'),
-    D => Key::Unicode('D'),
-    E => Key::Unicode('E'),
-    F => Key::Unicode('F'),
-    G => Key::Unicode('G'),
-    H => Key::Unicode('H'),
-    I => Key::Unicode('I'),
-    J => Key::Unicode('J'),
-    K => Key::Unicode('K'),
-    L => Key::Unicode('L'),
-    M => Key::Unicode('M'),
-    N => Key::Unicode('N'),
-    O => Key::Unicode('O'),
-    P => Key::Unicode('P'),
-    Q => Key::Unicode('Q'),
-    R => Key::Unicode('R'),
-    S => Key::Unicode('S'),
-    T => Key::Unicode('T'),
-    U => Key::Unicode('U'),
-    V => Key::Unicode('V'),
-    W => Key::Unicode('W'),
-    X => Key::Unicode('X'),
-    Y => Key::Unicode('Y'),
-    Z => Key::Unicode('Z'),
+    A => key_for!(A),
+    B => key_for!(B),
+    C => key_for!(C),
+    D => key_for!(D),
+    E => key_for!(E),
+    F => key_for!(F),
+    G => key_for!(G),
+    H => key_for!(H),
+    I => key_for!(I),
+    J => key_for!(J),
+    K => key_for!(K),
+    L => key_for!(L),
+    M => key_for!(M),
+    N => key_for!(N),
+    O => key_for!(O),
+    P => key_for!(P),
+    Q => key_for!(Q),
+    R => key_for!(R),
+    S => key_for!(S),
+    T => key_for!(T),
+    U => key_for!(U),
+    V => key_for!(V),
+    W => key_for!(W),
+    X => key_for!(X),
+    Y => key_for!(Y),
+    Z => key_for!(Z),
 
     Num0 => Key::Unicode('0'),
     Num1 => Key::Unicode('1'),
