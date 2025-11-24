@@ -348,54 +348,61 @@ async fn handle_node_with_app(
     let res: Result<(), String> = match node {
         Node::Start { .. } => Ok(()),
         Node::KeyBoard {
-            name,
-            duration,
-            retry,
-            interval,
-            params,
-            ..
+            metadata, params, ..
         } => {
+            let retry = metadata.retry.unwrap_or_default();
+            let interval = metadata.interval.unwrap_or_default();
             log::info!("Running pipeline keyboard: {:?}", &params);
             runner
-                .run_keyboard_action(&context, &name, &params, retry, interval, duration)
+                .run_keyboard_action(
+                    &context,
+                    &metadata.name,
+                    &params,
+                    retry,
+                    interval,
+                    metadata.duration,
+                )
                 .await
         }
         Node::MouseClick {
-            name,
-            duration,
-            retry,
-            interval,
-            params,
-            ..
+            metadata, params, ..
         } => {
+            let retry = metadata.retry.unwrap_or_default();
+            let interval = metadata.interval.unwrap_or_default();
+
             log::info!("Mouse click {}", params.value);
             runner
-                .run_mouse_click(&context, &name, &params.value, retry, interval, duration)
+                .run_mouse_click(
+                    &context,
+                    &metadata.name,
+                    &params.value,
+                    retry,
+                    interval,
+                    metadata.duration,
+                )
                 .await
         }
         Node::MouseMove {
-            name,
-            retry,
-            params,
-            ..
+            metadata, params, ..
         } => {
-            log::info!("{name:?} {:?} {:?}", params.x, params.y);
+            let retry = metadata.retry.unwrap_or_default();
+
+            log::info!("{:?} {:?}", metadata.name, params);
             runner
-                .run_mouse_move_action(&context, &name, &params.x, &params.y, retry)
+                .run_mouse_move_action(&context, &metadata.name, &params.x, &params.y, retry)
                 .await
         }
         Node::ImageRecognition {
-            name,
-            params,
-            retry,
-            interval,
-            ..
+            metadata, params, ..
         } => {
-            log::info!("{name:?} {:?}", params.images);
+            let retry = metadata.retry.unwrap_or_default();
+            let interval = metadata.interval.unwrap_or_default();
+
+            log::info!("ImageRecognition for image: {:?}", params.images);
             runner
                 .run_image_recognition_action(
                     &context,
-                    &name,
+                    &metadata.name,
                     params,
                     retry,
                     interval,
@@ -403,7 +410,10 @@ async fn handle_node_with_app(
                 )
                 .await
         }
-        Node::TimeWait { name, duration, .. } => {
+        Node::TimeWait { metadata, .. } => {
+            let duration = metadata.duration.unwrap_or_default() as u64;
+            let name = metadata.name;
+
             log::info!("Running pipeline time wait {duration}, name {name}");
             time::sleep(Duration::from_millis(duration)).await;
             Ok(())
@@ -462,54 +472,61 @@ async fn handle_node_without_app(
     let res: Result<(), String> = match node {
         Node::Start { .. } => Ok(()),
         Node::KeyBoard {
-            name,
-            duration,
-            retry,
-            interval,
-            params,
-            ..
+            metadata, params, ..
         } => {
+            let retry = metadata.retry.unwrap_or_default();
+            let interval = metadata.interval.unwrap_or_default();
             log::info!("Running pipeline keyboard: {:?}", &params);
             runner
-                .run_keyboard_action(&context, &name, &params, retry, interval, duration)
+                .run_keyboard_action(
+                    &context,
+                    &metadata.name,
+                    &params,
+                    retry,
+                    interval,
+                    metadata.duration,
+                )
                 .await
         }
         Node::MouseClick {
-            name,
-            duration,
-            retry,
-            interval,
-            params,
-            ..
+            metadata, params, ..
         } => {
+            let retry = metadata.retry.unwrap_or_default();
+            let interval = metadata.interval.unwrap_or_default();
+
             log::info!("Mouse click {}", params.value);
             runner
-                .run_mouse_click(&context, &name, &params.value, retry, interval, duration)
+                .run_mouse_click(
+                    &context,
+                    &metadata.name,
+                    &params.value,
+                    retry,
+                    interval,
+                    metadata.duration,
+                )
                 .await
         }
         Node::MouseMove {
-            name,
-            retry,
-            params,
-            ..
+            metadata, params, ..
         } => {
-            log::info!("{name:?} {:?} {:?}", params.x, params.y);
+            let retry = metadata.retry.unwrap_or_default();
+
+            log::info!("{:?} {:?}", metadata.name, params);
             runner
-                .run_mouse_move_action(&context, &name, &params.x, &params.y, retry)
+                .run_mouse_move_action(&context, &metadata.name, &params.x, &params.y, retry)
                 .await
         }
         Node::ImageRecognition {
-            name,
-            params,
-            retry,
-            interval,
-            ..
+            metadata, params, ..
         } => {
-            log::info!("{name:?} {:?}", params.images);
+            let retry = metadata.retry.unwrap_or_default();
+            let interval = metadata.interval.unwrap_or_default();
+
+            log::info!("ImageRecognition for image: {:?}", params.images);
             runner
                 .run_image_recognition_action(
                     &context,
-                    &name,
+                    &metadata.name,
                     params,
                     retry,
                     interval,
@@ -517,7 +534,10 @@ async fn handle_node_without_app(
                 )
                 .await
         }
-        Node::TimeWait { name, duration, .. } => {
+        Node::TimeWait { metadata, .. } => {
+            let duration = metadata.duration.unwrap_or_default() as u64;
+            let name = metadata.name;
+
             log::info!("Running pipeline time wait {duration}, name {name}");
             time::sleep(Duration::from_millis(duration)).await;
             Ok(())

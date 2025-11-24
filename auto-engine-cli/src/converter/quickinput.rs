@@ -1,7 +1,7 @@
 use crate::converter::types::quickinput;
 use crate::converter::types::quickinput::{Action, QuickInputMacro};
 use auto_engine_core::types::{
-    KeyBoardKeyMode, KeyBoardParams, KeyCode, Node, Pipeline, Stage, ToKeyCode,
+    KeyBoardKeyMode, KeyBoardParams, KeyCode, MetaData, Node, Pipeline, Stage, ToKeyCode,
 };
 use std::error::Error;
 use std::fs;
@@ -30,13 +30,16 @@ impl Converter {
                     let option = parse_action_params(action);
                     if let Some((params, key)) = option {
                         let node = Node::KeyBoard {
-                            name: format!("key-{}-{}", index, key),
-                            duration: None,
-                            retry: 0,
-                            interval: 0,
+                            metadata: MetaData {
+                                name: format!("key-{}-{}", index, key),
+                                duration: None,
+                                retry: Some(0),
+                                interval: Some(0),
+                                conditions: None,
+                                err_return: None,
+                                description: None,
+                            },
                             params,
-                            conditions: None,
-                            err_return: None,
                         };
 
                         pipelines.push(Stage { stage: vec![node] })
@@ -51,9 +54,15 @@ impl Converter {
                     let ms = action.ms.unwrap();
 
                     let node = Node::TimeWait {
-                        name: format!("wait-{}", index),
-                        duration: ms as u64,
-                        conditions: None,
+                        metadata: MetaData {
+                            name: format!("wait-{}", index),
+                            duration: Some(ms as u32),
+                            conditions: None,
+                            description: None,
+                            retry: Some(0),
+                            interval: Some(0),
+                            err_return: None,
+                        },
                     };
 
                     pipelines.push(Stage { stage: vec![node] })
@@ -73,6 +82,7 @@ pub fn parse_action_params(action: &Action) -> Option<(KeyBoardParams, String)> 
     }
 
     let key = virtual_key_to_string(action.vk.unwrap());
+
     let key = key?;
 
     let params: KeyBoardParams = match action.state.unwrap() {

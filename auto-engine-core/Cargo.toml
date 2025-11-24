@@ -4,6 +4,7 @@ name = "auto-engine-core"
 edition = "2024"
 
 [dependencies]
+auto-engine-macro = { path = "../auto-engine-macro" }
 serde_json = "1.0"
 serde_yaml = "0.9.34"
 serde = { version = "1.0", features = ["derive"] }

@@ -1,8 +1,12 @@
 [workspace]
-members = ["auto-engine-core", "auto-engine-cli"]
+members = ["auto-engine-core", "auto-engine-cli", "auto-engine-macro"]
 
 [workspace.package]
 version = "0.2.1"
 edition = "2024"
 rust-version = "1.89.0"
 authors = ["ceerdecy"]
+
+[workspace.dependencies]
+serde_json = "1.0"
+serde = { version = "1", features = ["derive"] }

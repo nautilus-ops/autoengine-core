@@ -1,5 +1,7 @@
 use crate::converter::types::keymousego::{Event, KeyActionParam, Script};
-use auto_engine_core::types::{KeyBoardParams, Node, Pipeline, Stage, ToKeyCode, ToKeyMode};
+use auto_engine_core::types::{
+    KeyBoardParams, MetaData, Node, Pipeline, Stage, ToKeyCode, ToKeyMode,
+};
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
@@ -43,18 +45,29 @@ impl Converter {
 
                             if *delay > 10 {
                                 let node = Node::TimeWait {
-                                    name: format!("wait-{}-{}-{}", action_type, key, index),
-                                    duration: *delay,
-                                    conditions: None,
+                                    metadata: MetaData {
+                                        name: format!("wait-{}-{}-{}", action_type, key, index),
+                                        description: None,
+                                        duration: Some(*delay as u32),
+                                        retry: None,
+                                        interval: None,
+                                        conditions: None,
+                                        err_return: None,
+                                    },
                                 };
                                 pipelines.push(Stage { stage: vec![node] })
                             }
 
                             let node = Node::KeyBoard {
-                                name: format!("{}-{}-{}", action_type, key, index),
-                                duration: None,
-                                retry: 0,
-                                interval: 0,
+                                metadata: MetaData {
+                                    name: format!("{}-{}-{}", action_type, key, index),
+                                    duration: None,
+                                    retry: Some(0),
+                                    interval: Some(0),
+                                    conditions: None,
+                                    err_return: None,
+                                    description: None,
+                                },
                                 params: KeyBoardParams {
                                     mode: action_type.to_key_mode(),
                                     key: key.to_key_code().unwrap_or_else(|| {
@@ -66,8 +79,6 @@ impl Converter {
                                     }),
                                     value: None,
                                 },
-                                conditions: None,
-                                err_return: None,
                             };
 
                             pipelines.push(Stage { stage: vec![node] });
@@ -78,7 +89,6 @@ impl Converter {
                     };
                 }
             }
-            ConverterFrom::QuickInput => {}
         }
 
         Ok(pipelines)

@@ -1,6 +1,7 @@
 use crate::context::Context;
 use crate::types::KeyBoardParams;
 use crate::types::conditions::Conditions;
+use auto_engine_macro::with_metadata;
 use opencv::imgcodecs;
 use serde::{Deserialize, Serialize};
 
@@ -60,96 +61,50 @@ pub struct Stage {
     pub stage: Vec<Node>,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+pub struct MetaData {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub retry: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interval: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conditions: Option<Conditions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub err_return: Option<bool>,
+}
+
+#[with_metadata]
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(tag = "action_type")]
 pub enum Node {
-    Start {
-        name: String,
-        conditions: String,
-    },
-    KeyBoard {
-        name: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        duration: Option<u32>,
-        retry: i32,
-        interval: u64,
-        params: KeyBoardParams,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        conditions: Option<Conditions>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        err_return: Option<bool>,
-    },
-    MouseClick {
-        name: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        duration: Option<u32>,
-        retry: i32,
-        interval: u64,
-        params: MouseClickParams,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        conditions: Option<Conditions>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        err_return: Option<bool>,
-    },
-    MouseMove {
-        name: String,
-        retry: i32,
-        params: MouseMoveParams,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        conditions: Option<Conditions>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        err_return: Option<bool>,
-    },
-    ImageRecognition {
-        name: String,
-        params: ImageRecognitionParams,
-        retry: i32,
-        interval: u64,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        conditions: Option<Conditions>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        err_return: Option<bool>,
-    },
-    TimeWait {
-        name: String,
-        duration: u64,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        conditions: Option<Conditions>,
-    },
+    Start,
+    KeyBoard { params: KeyBoardParams },
+    MouseClick { params: MouseClickParams },
+    MouseMove { params: MouseMoveParams },
+    ImageRecognition { params: ImageRecognitionParams },
+    TimeWait,
+    // Customize,
 }
 
 impl Node {
     pub fn name(&self) -> &str {
-        match self {
-            Node::Start { name, .. } => name,
-            Node::KeyBoard { name, .. } => name,
-            Node::MouseClick { name, .. } => name,
-            Node::MouseMove { name, .. } => name,
-            Node::ImageRecognition { name, .. } => name,
-            Node::TimeWait { name, .. } => name,
-        }
+        let metadata = self.metadata();
+        &metadata.name
     }
 
     pub fn conditions(&self) -> Option<Conditions> {
-        match self {
-            Node::Start { .. } => None,
-            Node::KeyBoard { conditions, .. } => conditions.clone(),
-            Node::MouseClick { conditions, .. } => conditions.clone(),
-            Node::MouseMove { conditions, .. } => conditions.clone(),
-            Node::ImageRecognition { conditions, .. } => conditions.clone(),
-            Node::TimeWait { conditions, .. } => conditions.clone(),
-        }
+        let metadata = self.metadata();
+        metadata.conditions.clone()
     }
 
     pub async fn check_conditions(&self, ctx: &Context) -> bool {
-        let conditions = match self {
-            Node::Start { .. } => return true,
-            Node::KeyBoard { conditions, .. } => conditions,
-            Node::MouseClick { conditions, .. } => conditions,
-            Node::MouseMove { conditions, .. } => conditions,
-            Node::ImageRecognition { conditions, .. } => conditions,
-            Node::TimeWait { conditions, .. } => conditions,
-        };
+        let conditions = self.conditions();
+
         if let Some(conditions) = conditions
             && let Err(err) = conditions.check(ctx).await
         {
@@ -160,20 +115,35 @@ impl Node {
     }
 
     pub fn stop_when_error(&self) -> bool {
-        match self {
-            Node::Start { .. } => true,
-            Node::KeyBoard { err_return, .. } => err_return.unwrap_or(true),
-            Node::MouseClick { err_return, .. } => err_return.unwrap_or(true),
-            Node::MouseMove { err_return, .. } => err_return.unwrap_or(true),
-            Node::ImageRecognition { err_return, .. } => err_return.unwrap_or(true),
-            Node::TimeWait { .. } => true,
-        }
+        let metadata = self.metadata();
+        metadata.err_return.unwrap_or(true)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::types::Pipeline;
+    use crate::types::{Node, Pipeline};
+
+    #[test]
+    fn parse_keyboard_node() {
+        let yaml_str = r#"
+action_type: KeyBoard
+name: "按下W键"
+duration: 500
+retry: 3
+interval: 500
+params:
+  mode: Down
+  key: W
+conditions:
+  exist: "find-heart.heart.png"
+            "#;
+        let node: Node = serde_yaml::from_str(yaml_str).unwrap();
+
+        let metadata = node.metadata();
+
+        println!("keyboard node: {:?}", metadata);
+    }
 
     #[test]
     fn parse_pipeline() {
@@ -181,7 +151,7 @@ mod tests {
 - stage:
     - action_type: Start
       name: "main"
-      conditions: ""
+      conditions: {}
 - stage:
     - action_type: ImageRecognition
       name: "find-dot"
@@ -248,15 +218,15 @@ mod tests {
       interval: 500
       params:
         mode: Down
-        key: "w"
+        key: W
       conditions:
         exist: "find-heart.heart.png"
 "#;
 
         let pipeline: Pipeline = match serde_yaml::from_str(&yaml_str) {
             Ok(res) => res,
-            _ => {
-                println!("Invalid YAML format");
+            Err(err) => {
+                println!("Invalid YAML format {err}");
                 assert!(false);
                 return;
             }
