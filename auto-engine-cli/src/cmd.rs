@@ -29,5 +29,9 @@ pub enum ConfigType {
         /// QuickInput config path
         #[arg(short, long, value_name = "config")]
         config: String,
+        #[arg(long, value_name = "with_exist")]
+        with_exist: Option<String>,
+        #[arg(long, value_name = "with_duration")]
+        with_duration: Option<u32>,
     },
 }

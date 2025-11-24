@@ -6,15 +6,31 @@ use auto_engine_core::types::{
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
+use auto_engine_core::types::conditions::Conditions;
 
 pub struct Converter {
     content: String,
+    conditions: Option<Conditions>,
+    pub duration: Option<u32>,
 }
 
 impl Converter {
-    pub fn new(config_path: &PathBuf) -> Converter {
+    pub fn new(
+        config_path: &PathBuf,
+        with_exist: Option<String>,
+        with_duration: Option<u32>,
+    ) -> Converter {
         let content = fs::read_to_string(config_path).unwrap();
-        Converter { content }
+        let conditions = Conditions{
+            exist: with_exist,
+            condition: None,
+            not_exist: None,
+        };
+        Converter {
+            content,
+            conditions: Some(conditions),
+            duration: with_duration,
+        }
     }
 
     pub fn convert(&self) -> Result<Pipeline, Box<dyn Error>> {
@@ -32,10 +48,10 @@ impl Converter {
                         let node = Node::KeyBoard {
                             metadata: MetaData {
                                 name: format!("key-{}-{}", index, key),
-                                duration: None,
+                                duration: self.duration.clone(),
                                 retry: Some(0),
                                 interval: Some(0),
-                                conditions: None,
+                                conditions: self.conditions.clone(),
                                 err_return: None,
                                 description: None,
                             },
@@ -57,7 +73,7 @@ impl Converter {
                         metadata: MetaData {
                             name: format!("wait-{}", index),
                             duration: Some(ms as u32),
-                            conditions: None,
+                            conditions: self.conditions.clone(),
                             description: None,
                             retry: Some(0),
                             interval: Some(0),

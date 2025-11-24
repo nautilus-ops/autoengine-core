@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Conditions {
     #[serde(skip_serializing_if = "Option::is_none")]
-    exist: Option<String>,
+    pub exist: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    condition: Option<String>,
+    pub condition: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    not_exist: Option<String>,
+    pub not_exist: Option<String>,
 }
 
 impl Conditions {
