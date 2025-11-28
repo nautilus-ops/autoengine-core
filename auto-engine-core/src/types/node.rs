@@ -2,12 +2,13 @@ use schemars::Schema;
 
 use crate::context::Context;
 
+#[derive(Clone)]
 pub struct NodeName {
     pub zh: String,
     pub en: String,
 }
 
-pub trait NodeDefine {
+pub trait NodeDefine: Send + Sync {
     fn action_type(&self) -> String;
 
     fn name(&self) -> NodeName;

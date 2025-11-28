@@ -20,6 +20,8 @@ pub struct NodeSchema {
     #[serde(flatten)]
     pub metadata: MetaData,
     pub params: Option<NodeParameters>,
+    pub icon: Option<String>,
+
     #[serde(skip)]
     pub position: Position,
     #[serde(skip)]

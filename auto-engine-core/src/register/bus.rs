@@ -1,29 +1,58 @@
+use crate::node::start::node::StartNode;
+use crate::node::start::runner::{StartRunner, StartRunnerFactory};
 use crate::types::node::{NodeDefine, NodeRunner, NodeRunnerFactory};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
 
 pub struct NodeRegisterBus {
-    nodes: HashMap<String, Arc<RwLock<Box<dyn NodeDefine>>>>,
-    runner_factories: HashMap<String, Arc<RwLock<Box<dyn NodeRunnerFactory>>>>,
+    nodes: HashMap<String, Arc<Box<dyn NodeDefine>>>,
+    runner_factories: HashMap<String, Arc<Box<dyn NodeRunnerFactory>>>,
 }
 
-impl NodeRegisterBus {
-    pub fn new() -> Self {
+impl Default for NodeRegisterBus {
+    fn default() -> Self {
         Self {
             nodes: HashMap::new(),
             runner_factories: HashMap::new(),
         }
     }
+}
+
+impl NodeRegisterBus {
+    pub fn new() -> Self {
+        let bus = Self {
+            nodes: HashMap::new(),
+            runner_factories: HashMap::new(),
+        };
+
+        bus
+    }
+
+    pub fn with_internal_nodes(mut self) -> NodeRegisterBus {
+        self.register(Box::new(StartNode::new()), Box::new(StartRunnerFactory::new()));
+        self
+    }
 
     pub fn register(&mut self, node: Box<dyn NodeDefine>, factory: Box<dyn NodeRunnerFactory>) {
         let key = node.action_type();
 
-        self.nodes.insert(key.clone(), Arc::new(RwLock::new(node)));
+        self.nodes.insert(key.clone(), Arc::new(node));
         self.runner_factories
-            .insert(key, Arc::new(RwLock::new(factory)));
+            .insert(key, Arc::new(factory));
     }
 
-    pub fn list_nodes(&self) -> Vec<Arc<RwLock<Box<dyn NodeDefine>>>> {
+    pub fn register_runner(&mut self, action_type: String, factory: Box<dyn NodeRunnerFactory>) {
+        let key = action_type.clone();
+        self.runner_factories
+            .insert(key, Arc::new(factory));
+    }
+
+    pub fn register_node(&mut self, action_type: String, node: Box<dyn NodeDefine>) {
+        let key = action_type.clone();
+        self.nodes.insert(key, Arc::new(node));
+    }
+
+    pub fn list_nodes(&self) -> Vec<Arc<Box<dyn NodeDefine>>> {
         let mut res = vec![];
         for (_key, value) in self.nodes.iter() {
             res.push(Arc::clone(value));
@@ -31,9 +60,12 @@ impl NodeRegisterBus {
         res
     }
 
-    pub async fn create_runner(&self, key: &str) -> Option<Box<dyn NodeRunner>> {
-        let factory_lock = self.runner_factories.get(key)?.clone();
-        let factory = factory_lock.read().await;
+    pub fn load_node(&self, action_type: &str) -> Option<Arc<Box<dyn NodeDefine>>> {
+        Some(self.nodes.get(action_type)?.clone())
+    }
+
+    pub fn create_runner(&self, key: &str) -> Option<Box<dyn NodeRunner>> {
+        let factory = self.runner_factories.get(key)?.clone();
         Some(factory.create())
     }
 }
@@ -133,7 +165,7 @@ mod tests {
         let nodes = bus.list_nodes();
         assert_eq!(nodes.len(), 1);
 
-        let node = nodes[0].read().await;
+        let node = nodes[0].clone();
         assert_eq!(node.action_type(), "action_a");
     }
 
@@ -148,7 +180,6 @@ mod tests {
 
         let runner = bus
             .create_runner("action_b")
-            .await
             .expect("runner should be created");
 
         let ctx = Context::new(PathBuf::new());
@@ -163,6 +194,6 @@ mod tests {
     #[tokio::test]
     async fn create_runner_returns_none_for_unknown_key() {
         let bus = NodeRegisterBus::new();
-        assert!(bus.create_runner("unknown").await.is_none());
+        assert!(bus.create_runner("unknown").is_none());
     }
 }

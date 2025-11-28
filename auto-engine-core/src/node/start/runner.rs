@@ -24,6 +24,12 @@ impl NodeRunner for StartRunner {
 
 pub struct StartRunnerFactory;
 
+impl StartRunnerFactory {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 impl NodeRunnerFactory for StartRunnerFactory {
     fn create(&self) -> Box<dyn NodeRunner> {
         Box::new(StartRunner::new())

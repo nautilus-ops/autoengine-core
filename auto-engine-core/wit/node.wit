@@ -1,0 +1,25 @@
+package plugins:node-register;
+
+interface host {
+    record node-name {
+        zh: string,
+        en: string,
+    }
+
+    record node {
+        action-type: string,
+        name: node-name,
+        icon: string,
+        output-schema: string,
+        input-schema: string,
+    }
+
+    invent-entirely-new-node: func(n: node);
+}
+
+world plugin {
+    import host;
+    export init: func();
+    export get-plugin-name: func() -> string;
+    export node-handle: func() -> result<string,string>;
+}

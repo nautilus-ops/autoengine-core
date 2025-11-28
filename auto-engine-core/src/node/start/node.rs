@@ -1,8 +1,14 @@
 use crate::types::node::{NodeDefine, NodeName};
 
-pub struct Start;
+pub struct StartNode;
 
-impl NodeDefine for Start {
+impl StartNode {
+    pub(crate) fn new() -> StartNode {
+        Self {}
+    }
+}
+
+impl NodeDefine for StartNode {
     fn action_type(&self) -> String {
         String::from("Start")
     }

@@ -20,6 +20,9 @@ screenshots = "0.8.10"
 enigo = { version = "0.6.1", features = ["tokio"] }
 schemars = "1.1.0"
 async-trait = "0.1.89"
+wasmtime = "39.0.1"
+wasmtime-wasi = "39.0.1"
+anyhow = "1.0.100"
 
 [features]
 default = ["types", "context", "event", "pipeline", "runner", "utils"]
@@ -30,3 +33,4 @@ pipeline = []
 runner = []
 utils = []
 tauri = []
+wasm = ["types"]

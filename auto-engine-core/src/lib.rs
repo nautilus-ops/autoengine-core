@@ -1,3 +1,9 @@
+use wasmtime::component::bindgen;
+
+bindgen!({world: "plugin", path: "wit/node.wit"});
+
+pub use plugins::*;
+
 #[cfg(feature = "context")]
 pub mod context;
 #[cfg(feature = "event")]
@@ -15,4 +21,8 @@ pub mod types;
 #[cfg(feature = "utils")]
 pub mod utils;
 
+#[cfg(feature = "types")]
 pub mod register;
+
+#[cfg(feature = "wasm")]
+pub mod plugin;
