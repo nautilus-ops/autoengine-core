@@ -1,4 +1,4 @@
-use crate::types::node::{NodeDefine, NodeName};
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
 
 pub struct MouseMoveNode {}
@@ -14,8 +14,8 @@ impl NodeDefine for MouseMoveNode {
         "MouseMove".to_string()
     }
 
-    fn name(&self) -> NodeName {
-        NodeName {
+    fn name(&self) -> I18nValue {
+        I18nValue {
             zh: "鼠标移动".to_string(),
             en: "MouseMove".to_string(),
         }
@@ -36,5 +36,21 @@ impl NodeDefine for MouseMoveNode {
         input.insert("x".to_owned(), "string".to_owned());
         input.insert("y".to_owned(), "string".to_owned());
         input
+    }
+
+    fn category(&self) -> Option<I18nValue> {
+        Some(I18nValue {
+            zh: String::from("桌面自动化"),
+            en: String::from("Desktop Automatic"),
+        })
+    }
+
+    fn description(&self) -> Option<I18nValue> {
+        Some(I18nValue {
+            zh: String::from("接收参数x和y坐标，模拟鼠标移动"),
+            en: String::from(
+                "Accepts x and y coordinates as parameters to simulate mouse movement.",
+            ),
+        })
     }
 }

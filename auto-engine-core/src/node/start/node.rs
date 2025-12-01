@@ -1,5 +1,5 @@
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
-use crate::types::node::{NodeDefine, NodeName};
 
 pub struct StartNode;
 
@@ -14,8 +14,8 @@ impl NodeDefine for StartNode {
         String::from("Start")
     }
 
-    fn name(&self) -> NodeName {
-        NodeName {
+    fn name(&self) -> I18nValue {
+        I18nValue {
             zh: String::from("开始"),
             en: String::from("Start"),
         }
@@ -33,5 +33,19 @@ impl NodeDefine for StartNode {
 
     fn input_schema(&self) -> HashMap<String, String> {
         Default::default()
+    }
+
+    fn category(&self) -> Option<I18nValue> {
+        Some(I18nValue {
+            zh: String::from("基础节点"),
+            en: String::from("Base node"),
+        })
+    }
+
+    fn description(&self) -> Option<I18nValue> {
+        Some(I18nValue {
+            zh: String::from("工作流从此节点开始执行"),
+            en: String::from("The workflow start at this node."),
+        })
     }
 }

@@ -1,19 +1,21 @@
-use std::collections::HashMap;
+use crate::context::Context;
 use schemars::Schema;
 use serde::{Deserialize, Serialize};
-use crate::context::Context;
+use std::{cmp::Ordering, collections::HashMap};
 
-#[derive(Clone, Default, Serialize, Deserialize)]
-pub struct NodeName {
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
+pub struct I18nValue {
     pub zh: String,
     pub en: String,
 }
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub struct NodeType {
     pub action_type: String,
-    pub name: NodeName,
+    pub name: I18nValue,
     pub icon: String,
+    pub category: Option<I18nValue>,
+    pub description: Option<I18nValue>,
     pub output_schema: HashMap<String, String>,
     pub input_schema: HashMap<String, String>,
 }
@@ -21,9 +23,13 @@ pub struct NodeType {
 pub trait NodeDefine: Send + Sync {
     fn action_type(&self) -> String;
 
-    fn name(&self) -> NodeName;
+    fn name(&self) -> I18nValue;
 
     fn icon(&self) -> String;
+
+    fn category(&self) -> Option<I18nValue>;
+
+    fn description(&self) -> Option<I18nValue>;
 
     fn output_schema(&self) -> HashMap<String, String>;
 

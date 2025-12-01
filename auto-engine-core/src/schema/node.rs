@@ -3,13 +3,18 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
-use crate::types::MetaData;
+use crate::types::{
+    MetaData,
+    node::{I18nValue, NodeType},
+};
 
 type NodeParameters = HashMap<Value, Value>;
 
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct Position {
+    #[serde(default)]
     pub x: i64,
+    #[serde(default)]
     pub y: i64,
 }
 
@@ -19,14 +24,12 @@ pub struct NodeSchema {
     #[serde(flatten)]
     pub metadata: MetaData,
     pub params: Option<NodeParameters>,
-    pub icon: Option<String>,
-
-    #[serde(skip)]
+    #[serde(default)]
     pub position: Position,
-    #[serde(skip)]
-    pub output_schema: Option<HashMap<String, String>>,
-    #[serde(skip)]
-    pub input_schema: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub type_define: Option<NodeType>,
 }
 
 #[cfg(test)]

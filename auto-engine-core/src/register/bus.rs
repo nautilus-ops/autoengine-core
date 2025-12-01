@@ -80,8 +80,7 @@ impl NodeRegisterBus {
 mod tests {
     use super::*;
     use crate::context::Context;
-    use crate::types::node::{NodeDefine, NodeName, NodeRunner, NodeRunnerFactory};
-    use schemars::Schema;
+    use crate::types::node::{I18nValue, NodeDefine, NodeRunner, NodeRunnerFactory};
     use serde_json::json;
     use std::path::PathBuf;
     use std::sync::Arc;
@@ -104,8 +103,8 @@ mod tests {
             self.action.clone()
         }
 
-        fn name(&self) -> NodeName {
-            NodeName {
+        fn name(&self) -> I18nValue {
+            I18nValue {
                 zh: "测试节点".to_string(),
                 en: "test node".to_string(),
             }
@@ -121,6 +120,20 @@ mod tests {
 
         fn input_schema(&self) -> HashMap<String, String> {
             Default::default()
+        }
+
+        fn category(&self) -> Option<I18nValue> {
+            Some(I18nValue {
+                zh: "测试节点".to_string(),
+                en: "test node".to_string(),
+            })
+        }
+
+        fn description(&self) -> Option<I18nValue> {
+            Some(I18nValue {
+                zh: "测试节点".to_string(),
+                en: "test node".to_string(),
+            })
         }
     }
 

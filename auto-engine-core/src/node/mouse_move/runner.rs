@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
 use crate::{context::Context, types::node::NodeRunner, utils::parse_variables};
-use crate::node::mouse_move::node::MouseMoveNode;
 use crate::types::node::NodeRunnerFactory;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

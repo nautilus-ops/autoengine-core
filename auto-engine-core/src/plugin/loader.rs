@@ -6,7 +6,7 @@ use crate::node_register::host::Node;
 use crate::register::bus::NodeRegisterBus;
 use std::ffi::OsStr;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 use wasmtime::Engine;
 use wasmtime::Store;
 use wasmtime::component::{Component, HasSelf, Linker, ResourceTable};
@@ -19,7 +19,7 @@ pub(crate) struct PluginState {
 }
 
 impl WasiView for PluginState {
-    fn ctx(&mut self) -> WasiCtxView {
+    fn ctx(&mut self) -> WasiCtxView<'_> {
         WasiCtxView {
             ctx: &mut self.wasi_ctx,
             table: &mut self.resource_table,

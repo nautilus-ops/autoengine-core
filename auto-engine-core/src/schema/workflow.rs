@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{schema::node::NodeSchema, types::conditions::Conditions};
+use crate::schema::node::NodeSchema;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct WorkflowSchema {
     pub nodes: Vec<NodeSchema>,
-    pub connections: Vec<Conditions>,
+    pub connections: Vec<Connection>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
