@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::node_register::host;
 use crate::types::node::{NodeDefine, NodeName};
 
@@ -37,11 +38,11 @@ impl NodeDefine for WasmNode {
         self.icon.clone()
     }
 
-    fn output_schema(&self) -> schemars::Schema {
+    fn output_schema(&self) -> HashMap<String, String> {
         serde_json::from_str(&self.output_schema).unwrap()
     }
 
-    fn input_schema(&self) -> schemars::Schema {
+    fn input_schema(&self) -> HashMap<String, String> {
         serde_json::from_str(&self.input_schema).unwrap()
     }
 }

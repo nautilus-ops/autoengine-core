@@ -1,4 +1,40 @@
-use auto_engine_macro::with_node_define;
+use crate::types::node::{NodeDefine, NodeName};
+use std::collections::HashMap;
 
-#[with_node_define]
-pub struct MouseMove {}
+pub struct MouseMoveNode {}
+
+impl MouseMoveNode {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl NodeDefine for MouseMoveNode {
+    fn action_type(&self) -> String {
+        "MouseMove".to_string()
+    }
+
+    fn name(&self) -> NodeName {
+        NodeName {
+            zh: "鼠标移动".to_string(),
+            en: "MouseMove".to_string(),
+        }
+    }
+
+    fn icon(&self) -> String {
+        String::from(
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNwbGluZS1wb2ludGVyLWljb24gbHVjaWRlLXNwbGluZS1wb2ludGVyIj48cGF0aCBkPSJNMTIuMDM0IDEyLjY4MWEuNDk4LjQ5OCAwIDAgMSAuNjQ3LS42NDdsOSAzLjVhLjUuNSAwIDAgMS0uMDMzLjk0M2wtMy40NDQgMS4wNjhhMSAxIDAgMCAwLS42Ni42NmwtMS4wNjcgMy40NDNhLjUuNSAwIDAgMS0uOTQzLjAzM3oiLz48cGF0aCBkPSJNNSAxN0ExMiAxMiAwIDAgMSAxNyA1Ii8+PGNpcmNsZSBjeD0iMTkiIGN5PSI1IiByPSIyIi8+PGNpcmNsZSBjeD0iNSIgY3k9IjE5IiByPSIyIi8+PC9zdmc+",
+        )
+    }
+
+    fn output_schema(&self) -> HashMap<String, String> {
+        Default::default()
+    }
+
+    fn input_schema(&self) -> HashMap<String, String> {
+        let mut input = HashMap::new();
+        input.insert("x".to_owned(), "string".to_owned());
+        input.insert("y".to_owned(), "string".to_owned());
+        input
+    }
+}

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::types::node::{NodeDefine, NodeName};
 
 pub struct StartNode;
@@ -26,11 +27,11 @@ impl NodeDefine for StartNode {
         )
     }
 
-    fn output_schema(&self) -> schemars::Schema {
+    fn output_schema(&self) -> HashMap<String, String> {
         Default::default()
     }
 
-    fn input_schema(&self) -> schemars::Schema {
+    fn input_schema(&self) -> HashMap<String, String> {
         Default::default()
     }
 }

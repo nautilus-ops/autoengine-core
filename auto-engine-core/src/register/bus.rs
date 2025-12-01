@@ -1,8 +1,9 @@
+use crate::node::mouse_move::node::MouseMoveNode;
+use crate::node::mouse_move::runner::MouseMoveNodeFactory;
 use crate::node::start::node::StartNode;
-use crate::node::start::runner::{StartRunner, StartRunnerFactory};
+use crate::node::start::runner::StartRunnerFactory;
 use crate::types::node::{NodeDefine, NodeRunner, NodeRunnerFactory};
 use std::{collections::HashMap, sync::Arc};
-use tokio::sync::RwLock;
 
 pub struct NodeRegisterBus {
     nodes: HashMap<String, Arc<Box<dyn NodeDefine>>>,
@@ -29,7 +30,14 @@ impl NodeRegisterBus {
     }
 
     pub fn with_internal_nodes(mut self) -> NodeRegisterBus {
-        self.register(Box::new(StartNode::new()), Box::new(StartRunnerFactory::new()));
+        self.register(
+            Box::new(StartNode::new()),
+            Box::new(StartRunnerFactory::new()),
+        );
+        self.register(
+            Box::new(MouseMoveNode::new()),
+            Box::new(MouseMoveNodeFactory::new()),
+        );
         self
     }
 
@@ -37,14 +45,12 @@ impl NodeRegisterBus {
         let key = node.action_type();
 
         self.nodes.insert(key.clone(), Arc::new(node));
-        self.runner_factories
-            .insert(key, Arc::new(factory));
+        self.runner_factories.insert(key, Arc::new(factory));
     }
 
     pub fn register_runner(&mut self, action_type: String, factory: Box<dyn NodeRunnerFactory>) {
         let key = action_type.clone();
-        self.runner_factories
-            .insert(key, Arc::new(factory));
+        self.runner_factories.insert(key, Arc::new(factory));
     }
 
     pub fn register_node(&mut self, action_type: String, node: Box<dyn NodeDefine>) {
@@ -109,12 +115,12 @@ mod tests {
             "icon".to_string()
         }
 
-        fn output_schema(&self) -> Schema {
-            true.into()
+        fn output_schema(&self) -> HashMap<String, String> {
+            Default::default()
         }
 
-        fn input_schema(&self) -> Schema {
-            true.into()
+        fn input_schema(&self) -> HashMap<String, String> {
+            Default::default()
         }
     }
 

@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
 use crate::{context::Context, types::node::NodeRunner, utils::parse_variables};
+use crate::node::mouse_move::node::MouseMoveNode;
+use crate::types::node::NodeRunnerFactory;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct MouseMoveParams {
@@ -51,5 +53,20 @@ impl NodeRunner for MouseMoveRunner {
             .move_mouse(x / rate as i32, y / rate as i32, Coordinate::Abs)
             .map_err(|err| format!("Failed to move_mouse: {err}"))?;
         Ok(())
+    }
+}
+
+
+pub struct MouseMoveNodeFactory;
+
+impl MouseMoveNodeFactory {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl NodeRunnerFactory for MouseMoveNodeFactory {
+    fn create(&self) -> Box<dyn NodeRunner> {
+        Box::new(MouseMoveRunner::new())
     }
 }

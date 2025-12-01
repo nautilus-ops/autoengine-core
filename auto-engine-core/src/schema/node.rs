@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use schemars::Schema;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
@@ -25,9 +24,9 @@ pub struct NodeSchema {
     #[serde(skip)]
     pub position: Position,
     #[serde(skip)]
-    pub output_schema: Option<Schema>,
+    pub output_schema: Option<HashMap<String, String>>,
     #[serde(skip)]
-    pub input_schema: Option<Schema>,
+    pub input_schema: Option<HashMap<String, String>>,
 }
 
 #[cfg(test)]

@@ -1,11 +1,21 @@
+use std::collections::HashMap;
 use schemars::Schema;
-
+use serde::{Deserialize, Serialize};
 use crate::context::Context;
 
-#[derive(Clone)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct NodeName {
     pub zh: String,
     pub en: String,
+}
+
+#[derive(Clone, Default, Serialize, Deserialize)]
+pub struct NodeType {
+    pub action_type: String,
+    pub name: NodeName,
+    pub icon: String,
+    pub output_schema: HashMap<String, String>,
+    pub input_schema: HashMap<String, String>,
 }
 
 pub trait NodeDefine: Send + Sync {
@@ -15,9 +25,9 @@ pub trait NodeDefine: Send + Sync {
 
     fn icon(&self) -> String;
 
-    fn output_schema(&self) -> Schema;
+    fn output_schema(&self) -> HashMap<String, String>;
 
-    fn input_schema(&self) -> Schema;
+    fn input_schema(&self) -> HashMap<String, String>;
 }
 
 #[async_trait::async_trait]
