@@ -37,7 +37,7 @@ pub trait NodeDefine: Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait NodeRunner {
+pub trait NodeRunner: Send + Sync {
     async fn run(&self, ctx: &Context, param: serde_json::Value) -> Result<(), String>;
 }
 

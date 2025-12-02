@@ -23,6 +23,7 @@ pub struct NodeSchema {
     pub action_type: String,
     #[serde(flatten)]
     pub metadata: MetaData,
+    #[deprecated(since = "0.2.2", note = "Use `input_data` instead")]
     pub params: Option<NodeParameters>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub input_data: Option<HashMap<String, String>>,

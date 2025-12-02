@@ -6,7 +6,8 @@ use crate::node_register::host::Node;
 use crate::register::bus::NodeRegisterBus;
 use std::ffi::OsStr;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use wasmtime::Engine;
 use wasmtime::Store;
 use wasmtime::component::{Component, HasSelf, Linker, ResourceTable};
@@ -29,10 +30,13 @@ impl WasiView for PluginState {
 
 impl host::Host for PluginState {
     fn invent_entirely_new_node(&mut self, n: Node) -> () {
-        let mut bus = self.node_bus.write().unwrap();
-        let name = n.action_type.clone();
-        bus.register_node(name.clone(), Box::new(WasmNode::from_node(n)));
-        log::info!("Node: {} register success", name)
+        let bus = self.node_bus.clone();
+        tokio::task::spawn(async move {
+            let mut bus = bus.write().await;
+            let name = n.action_type.clone();
+            bus.register_node(name.clone(), Box::new(WasmNode::from_node(n)));
+            log::info!("Node: {} register success", name)
+        });
     }
 }
 
@@ -43,7 +47,7 @@ impl PluginLoader {
         Self {}
     }
 
-    pub fn load_plugins(
+    pub async  fn load_plugins(
         &mut self,
         plugin_folder: PathBuf,
         bus: Arc<RwLock<NodeRegisterBus>>,
@@ -57,13 +61,13 @@ impl PluginLoader {
         for entry in std::fs::read_dir(plugin_folder)? {
             let path = entry?.path();
             if path.is_file() && path.extension().and_then(OsStr::to_str) == Some("wasm") {
-                self.load_plugin(&engine, path, bus.clone())?;
+                self.load_plugin(&engine, path, bus.clone()).await?;
             }
         }
 
         Ok(())
     }
-    fn load_plugin(
+    async fn load_plugin(
         &mut self,
         engine: &Engine,
         plugin_path: PathBuf,
@@ -83,7 +87,7 @@ impl PluginLoader {
         let factory = WasmRunnerFactory::new(store, plugin);
 
         {
-            let mut bus = bus.write().unwrap();
+            let mut bus = bus.write().await;
             bus.register_runner(plugin_name, Box::new(factory));
         }
 

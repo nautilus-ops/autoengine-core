@@ -3,7 +3,8 @@ use crate::node::mouse_move::runner::MouseMoveNodeFactory;
 use crate::node::start::node::StartNode;
 use crate::node::start::runner::StartRunnerFactory;
 use crate::types::node::{NodeDefine, NodeRunner, NodeRunnerFactory};
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 pub struct NodeRegisterBus {
     nodes: HashMap<String, Arc<Box<dyn NodeDefine>>>,
