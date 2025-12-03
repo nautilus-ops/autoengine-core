@@ -1,5 +1,4 @@
-use crate::types::node::{I18nValue, NodeDefine};
-use std::collections::HashMap;
+use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
 pub struct MouseMoveNode {}
@@ -28,15 +27,33 @@ impl NodeDefine for MouseMoveNode {
         )
     }
 
-    fn output_schema(&self) -> HashMap<String, String> {
+    fn output_schema(&self) -> Vec<SchemaField> {
         Default::default()
     }
 
-    fn input_schema(&self) -> HashMap<String, String> {
-        let mut input = HashMap::new();
-        input.insert("x".to_owned(), "string".to_owned());
-        input.insert("y".to_owned(), "string".to_owned());
-        input
+    fn input_schema(&self) -> Vec<SchemaField> {
+        vec![
+            SchemaField {
+                name: "x".to_owned(),
+                field_type: FieldType::Number,
+                description: Some(I18nValue {
+                    zh: "鼠标移动的横坐标".to_owned(),
+                    en: "Horizontal position of mouse move".to_owned(),
+                }),
+                enums: vec![],
+                default: None,
+            },
+            SchemaField {
+                name: "y".to_owned(),
+                field_type: FieldType::Number,
+                description: Some(I18nValue {
+                    zh: "鼠标移动的纵坐标".to_owned(),
+                    en: "Vertical position of mouse move".to_owned(),
+                }),
+                enums: vec![],
+                default: None,
+            },
+        ]
     }
 
     fn category(&self) -> Option<I18nValue> {

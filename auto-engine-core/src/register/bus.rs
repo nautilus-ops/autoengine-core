@@ -1,8 +1,10 @@
+use crate::node::mouse_click::node::MouseClickNode;
+use crate::node::mouse_click::runner::MouseClickNodeFactory;
 use crate::node::mouse_move::node::MouseMoveNode;
 use crate::node::mouse_move::runner::MouseMoveNodeFactory;
 use crate::node::start::node::StartNode;
 use crate::node::start::runner::StartRunnerFactory;
-use crate::types::node::{NodeDefine, NodeRunner, NodeRunnerFactory};
+use crate::types::node::{NodeDefine, NodeRunner, NodeRunnerFactory, SchemaField};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -28,6 +30,10 @@ impl NodeRegisterBus {
         self.register(
             Box::new(MouseMoveNode::new()),
             Box::new(MouseMoveNodeFactory::new()),
+        );
+        self.register(
+            Box::new(MouseClickNode::new()),
+            Box::new(MouseClickNodeFactory::new()),
         );
         self
     }
@@ -105,11 +111,11 @@ mod tests {
             "icon".to_string()
         }
 
-        fn output_schema(&self) -> HashMap<String, String> {
+        fn output_schema(&self) -> Vec<SchemaField> {
             Default::default()
         }
 
-        fn input_schema(&self) -> HashMap<String, String> {
+        fn input_schema(&self) -> Vec<SchemaField> {
             Default::default()
         }
 

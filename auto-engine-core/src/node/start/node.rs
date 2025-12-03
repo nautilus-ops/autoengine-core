@@ -1,5 +1,4 @@
-use crate::types::node::{I18nValue, NodeDefine};
-use std::collections::HashMap;
+use crate::types::node::{I18nValue, NodeDefine, SchemaField};
 
 pub struct StartNode;
 
@@ -27,11 +26,11 @@ impl NodeDefine for StartNode {
         )
     }
 
-    fn output_schema(&self) -> HashMap<String, String> {
+    fn output_schema(&self) -> Vec<SchemaField> {
         Default::default()
     }
 
-    fn input_schema(&self) -> HashMap<String, String> {
+    fn input_schema(&self) -> Vec<SchemaField> {
         Default::default()
     }
 
