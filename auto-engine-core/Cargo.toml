@@ -24,6 +24,7 @@ async-trait = "0.1.89"
 wasmtime = "39.0.1"
 wasmtime-wasi = "39.0.1"
 anyhow = "1.0.100"
+convert_case = "0.10.0"
 
 [features]
 default = ["types", "context", "event", "pipeline", "runner", "utils"]

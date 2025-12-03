@@ -92,13 +92,13 @@ fn handle_pipeline(
     min_interval_ms: u64,
     app: AppHandle,
 ) -> Result<(), String> {
-    let app = Arc::new(app);
+    let app = app.clone();
     let mut task_set = JoinSet::new();
 
     for pipeline in pipelines {
         let pipeline = pipeline.clone();
         let dir_path = dir_path.clone();
-        let runner = Arc::new(ActionRunner::new(app.clone()));
+        let runner = Arc::new(ActionRunner::new(Arc::new(app.clone())));
         log::info!("Running pipeline {pipeline:?}");
 
         let app_handle = app.clone();
@@ -119,14 +119,14 @@ fn handle_pipeline(
 
                 let pipeline = pipeline.clone();
                 let dir_path = dir_path.clone();
-                let context = Arc::new(Context::new(dir_path).with_screen_scale(rate));
+                let context = Arc::new(Context::new(dir_path, Some(app_handle.clone())).with_screen_scale(rate));
 
                 for stage in pipeline {
                     match handle_stage_with_app(
                         context.clone(),
                         stage,
                         runner.clone(),
-                        app_handle.clone(),
+                        Arc::new(app_handle.clone()),
                     )
                     .await
                     {

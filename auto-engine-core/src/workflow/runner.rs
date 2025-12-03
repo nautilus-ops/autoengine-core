@@ -353,7 +353,7 @@ mod tests {
             )),
         );
 
-        let ctx = Arc::new(Context::new(PathBuf::new()));
+        let ctx = Arc::new(Context::new(PathBuf::new(), None));
 
         let emitter = NotificationEmitter::new();
 

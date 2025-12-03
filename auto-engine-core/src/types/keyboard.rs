@@ -109,7 +109,10 @@ macro_rules! map_keys {
         }
         impl ToKeyCode for String {
             fn to_key_code(&self) -> Option<KeyCode> {
-                match self.to_uppercase().as_str() {
+                use convert_case::{Case, Casing};
+                let key = self.to_case(Case::Pascal);
+                
+                match key.as_str() {
                     $(
                         stringify!($keycode) => Some(KeyCode::$keycode),
                     )*
@@ -198,4 +201,68 @@ map_keys! {
     Alt => Key::Alt,
     Control => Key::Control,
     Shift => Key::Shift,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::ToKeyCode;
+    use enigo::Key;
+
+    #[test]
+    fn parse_key_case_insensitive() {
+        struct Case {
+            raw: &'static str,
+            expected: Option<KeyCode>,
+        }
+
+        let cases = [
+            Case {
+                raw: "command",
+                expected: Some(KeyCode::Command),
+            },
+            Case {
+                raw: "COMMAND",
+                expected: Some(KeyCode::Command),
+            },
+            Case {
+                raw: "Num1",
+                expected: Some(KeyCode::Num1),
+            },
+            Case {
+                raw: "f1",
+                expected: Some(KeyCode::F1),
+            },
+            Case {
+                raw: "not-a-key",
+                expected: None,
+            },
+        ];
+
+        for case in cases {
+            let parsed = case.raw.to_string().to_key_code();
+            let matches = match (&parsed, &case.expected) {
+                (Some(got), Some(expected)) => std::mem::discriminant(got) == std::mem::discriminant(expected),
+                (None, None) => true,
+                _ => false,
+            };
+
+            assert!(matches, "input `{}` parsed to {:?}, expected {:?}", case.raw, parsed, case.expected);
+        }
+    }
+
+    #[test]
+    fn to_enigo_key_mapping() {
+        #[cfg(target_os = "windows")]
+        assert_eq!(KeyCode::A.to_enigo_key(), Key::A);
+        #[cfg(not(target_os = "windows"))]
+        assert_eq!(KeyCode::A.to_enigo_key(), Key::Unicode('A'));
+
+        assert_eq!(KeyCode::Num3.to_enigo_key(), Key::Unicode('3'));
+        assert_eq!(KeyCode::Enter.to_enigo_key(), Key::Return);
+        assert_eq!(KeyCode::Command.to_enigo_key(), Key::Meta);
+        assert_eq!(KeyCode::Option.to_enigo_key(), Key::Alt);
+        assert_eq!(KeyCode::Control.to_enigo_key(), Key::Control);
+        assert_eq!(KeyCode::Shift.to_enigo_key(), Key::Shift);
+    }
 }

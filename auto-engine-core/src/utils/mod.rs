@@ -58,7 +58,7 @@ mod tests {
             },
         ];
 
-        let context = Context::new(PathBuf::new());
+        let context = Context::new(PathBuf::new(), None);
         context.set_string_value("test", "test_value").await;
         context.set_string_value("none.a", "a").await;
 

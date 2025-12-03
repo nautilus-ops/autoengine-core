@@ -87,7 +87,7 @@ mod tests {
             },
         ];
 
-        let context = Context::new(PathBuf::new());
+        let context = Context::new(PathBuf::new(), None);
         context.set_string_value("image.x", "2").await;
 
         for t in tests {
