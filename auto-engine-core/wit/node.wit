@@ -1,0 +1,27 @@
+package plugins:node-register;
+
+interface host {
+    record i18n-value {
+        zh: string,
+        en: string,
+    }
+
+    record node {
+        action-type: string,
+        name: i18n-value,
+        icon: string,
+        description: i18n-value,
+        category: i18n-value,
+        output-schema: string,
+        input-schema: string,
+    }
+
+    invent-entirely-new-node: func(n: node);
+}
+
+world plugin {
+    import host;
+    export init: func();
+    export get-plugin-name: func() -> string;
+    export node-handle: func() -> result<string,string>;
+}

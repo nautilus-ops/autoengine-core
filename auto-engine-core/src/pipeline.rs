@@ -1,9 +1,8 @@
 use crate::context::Context;
-#[cfg(feature = "tauri")]
-use crate::event;
-use crate::event::TaskStatus;
 use crate::runner::ActionRunner;
 use crate::types::{Node, Pipeline, Stage};
+#[cfg(feature = "tauri")]
+use crate::{event, event::TaskStatus};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;

@@ -20,11 +20,16 @@ fn main() {
                 let content = serde_yaml::to_string(&result).unwrap();
 
                 println!("{}", content);
-            },
-            ConfigType::QuickInput { config, with_duration, with_exist } => {
+            }
+            ConfigType::QuickInput {
+                config,
+                with_duration,
+                with_exist,
+            } => {
                 let path = PathBuf::from(config);
                 let result = quickinput::Converter::new(&path, with_exist, with_duration)
-                    .convert().unwrap();
+                    .convert()
+                    .unwrap();
                 let content = serde_yaml::to_string(&result).unwrap();
                 println!("{}", content);
             }

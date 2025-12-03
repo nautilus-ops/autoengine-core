@@ -1,12 +1,12 @@
 use crate::converter::types::quickinput;
 use crate::converter::types::quickinput::{Action, QuickInputMacro};
+use auto_engine_core::types::conditions::Conditions;
 use auto_engine_core::types::{
     KeyBoardKeyMode, KeyBoardParams, KeyCode, MetaData, Node, Pipeline, Stage, ToKeyCode,
 };
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
-use auto_engine_core::types::conditions::Conditions;
 
 pub struct Converter {
     content: String,
@@ -21,7 +21,7 @@ impl Converter {
         with_duration: Option<u32>,
     ) -> Converter {
         let content = fs::read_to_string(config_path).unwrap();
-        let conditions = Conditions{
+        let conditions = Conditions {
             exist: with_exist,
             condition: None,
             not_exist: None,
@@ -48,7 +48,7 @@ impl Converter {
                         let node = Node::KeyBoard {
                             metadata: MetaData {
                                 name: format!("key-{}-{}", index, key),
-                                duration: self.duration.clone(),
+                                duration: self.duration,
                                 retry: Some(0),
                                 interval: Some(0),
                                 conditions: self.conditions.clone(),
