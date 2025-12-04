@@ -18,7 +18,7 @@ pub struct WasmRunner {
 
 #[async_trait::async_trait]
 impl NodeRunner for WasmRunner {
-    async fn run(&self, _ctx: &Context, _param: serde_json::Value) -> Result<(), String> {
+    async fn run(&mut self, _ctx: &Context, _param: serde_json::Value) -> Result<(), String> {
         let mut runtime = self
             .runtime
             .lock()

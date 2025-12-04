@@ -29,7 +29,7 @@ impl MouseMoveRunner {
 
 #[async_trait::async_trait]
 impl NodeRunner for MouseMoveRunner {
-    async fn run(&self, ctx: &Context, values: serde_json::Value) -> Result<(), String> {
+    async fn run(&mut self, ctx: &Context, values: serde_json::Value) -> Result<(), String> {
         let params: MouseMoveParams = serde_json::from_value(values).map_err(|e| e.to_string())?;
         let x: i32 = parse_variables(ctx, &params.x)
             .await

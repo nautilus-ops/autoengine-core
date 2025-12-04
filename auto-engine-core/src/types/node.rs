@@ -16,6 +16,8 @@ pub enum FieldType {
     Boolean,
     Array,
     Object,
+    Image,
+    File,
 }
 
 #[derive(Clone, Default, Serialize, Debug, Deserialize)]
@@ -62,7 +64,7 @@ pub trait NodeDefine: Send + Sync {
 
 #[async_trait::async_trait]
 pub trait NodeRunner: Send + Sync {
-    async fn run(&self, ctx: &Context, param: serde_json::Value) -> Result<(), String>;
+    async fn run(&mut self, ctx: &Context, param: serde_json::Value) -> Result<(), String>;
 }
 
 pub trait NodeRunnerFactory: Send + Sync {

@@ -1,9 +1,11 @@
+use crate::node::image_match::node::ImageMatchNode;
+use crate::node::image_match::runner::ImageMatchRunnerFactory;
+use crate::node::keyboard::node::KeyboardNode;
+use crate::node::keyboard::runner::KeyboardNodeFactory;
 use crate::node::mouse_click::node::MouseClickNode;
 use crate::node::mouse_click::runner::MouseClickNodeFactory;
 use crate::node::mouse_move::node::MouseMoveNode;
 use crate::node::mouse_move::runner::MouseMoveNodeFactory;
-use crate::node::keyboard::node::KeyboardNode;
-use crate::node::keyboard::runner::KeyboardNodeFactory;
 use crate::node::start::node::StartNode;
 use crate::node::start::runner::StartRunnerFactory;
 use crate::types::node::{NodeDefine, NodeRunner, NodeRunnerFactory};
@@ -40,6 +42,10 @@ impl NodeRegisterBus {
         self.register(
             Box::new(KeyboardNode::new()),
             Box::new(KeyboardNodeFactory::new()),
+        );
+        self.register(
+            Box::new(ImageMatchNode::new()),
+            Box::new(ImageMatchRunnerFactory::new()),
         );
         self
     }

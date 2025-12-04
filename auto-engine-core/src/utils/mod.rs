@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 static REGEX_PARSE_VARIABLES: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\$\{([^}:]+(?:\.[^}:]+)*)(?::([^}]*))?\}").unwrap());
+    Lazy::new(|| Regex::new(r"\$\{([^}:]+(?:\.[^}:]+)*)(?::([^}]*))?}").unwrap());
 
 // String: the value name or key
 // bool: if need get value from Context
@@ -16,7 +16,7 @@ pub async fn parse_variables(context: &Context, input: &str) -> String {
             let default = caps.get(2).map(|m| m.as_str()).unwrap_or("");
 
             if let Some(value) = ctx.get(var_name) {
-                return value.clone();
+                return serde_json::to_string(&value).unwrap_or_default().trim_matches('"').to_string();
             }
             default.to_string()
         })
@@ -58,9 +58,14 @@ mod tests {
             },
         ];
 
+        #[cfg(feature = "tauri")]
         let context = Context::new(PathBuf::new(), None);
-        context.set_string_value("test", "test_value").await;
-        context.set_string_value("none.a", "a").await;
+
+        #[cfg(not(feature = "tauri"))]
+        let context = Context::new(PathBuf::new());
+
+        context.set_string_value("test", "test_value").await.unwrap();
+        context.set_string_value("none.a", "a").await.unwrap();
 
         for t in tests {
             let result = parse_variables(&context, &t.content).await;

@@ -16,7 +16,7 @@ impl StartRunner {
 
 #[async_trait::async_trait]
 impl NodeRunner for StartRunner {
-    async fn run(&self, _ctx: &Context, _param: serde_json::Value) -> Result<(), String> {
+    async fn run(&mut self, _ctx: &Context, _param: serde_json::Value) -> Result<(), String> {
         // nothing need to do
         log::info!("Start workflow!");
         Ok(())

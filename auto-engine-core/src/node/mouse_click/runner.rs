@@ -30,7 +30,7 @@ impl MouseClickRunner {
 
 #[async_trait::async_trait]
 impl NodeRunner for MouseClickRunner {
-    async fn run(&self, _ctx: &Context, values: serde_json::Value) -> Result<(), String> {
+    async fn run(&mut self, _ctx: &Context, values: serde_json::Value) -> Result<(), String> {
         let params: MouseClickParams = serde_json::from_value(values).map_err(|e| e.to_string())?;
 
         let mut enigo = self

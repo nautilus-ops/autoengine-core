@@ -80,7 +80,7 @@ impl KeyboardNodeRunner {
 
 #[async_trait::async_trait]
 impl NodeRunner for KeyboardNodeRunner {
-    async fn run(&self, ctx: &Context, values: serde_json::Value) -> Result<(), String> {
+    async fn run(&mut self, ctx: &Context, values: serde_json::Value) -> Result<(), String> {
         let params: KeyboardParams = serde_json::from_value(values).map_err(|e| e.to_string())?;
 
         match params.mode {

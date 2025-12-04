@@ -185,7 +185,7 @@ async fn handle_node(
                 .emit(NODE_EVENT, NodeEventPayload::running(node_id_clone.clone()))
                 .unwrap_or_default();
 
-            let runner = {
+            let mut runner = {
                 let locked_bus = bus.read().await;
                 match locked_bus.create_runner(&action) {
                     Some(runner) => runner,
@@ -195,8 +195,7 @@ async fn handle_node(
                 }
             };
             let input_data = node_context.input_data.clone().unwrap_or_default();
-            let params = serde_json::to_value(&input_data).map_err(|e| e.to_string())?;
-            runner.run(&ctx, params).await.inspect_err(|_e| {
+            runner.run(&ctx, input_data).await.inspect_err(|_e| {
                 emitter
                     .emit(
                         NODE_EVENT,
@@ -297,7 +296,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl NodeRunner for TestRunner {
-        async fn run(&self, _ctx: &Context, param: serde_json::Value) -> Result<(), String> {
+        async fn run(&mut self, _ctx: &Context, param: serde_json::Value) -> Result<(), String> {
             self.counter.fetch_add(1, Ordering::SeqCst);
             let mut guard = self
                 .params
@@ -353,7 +352,13 @@ mod tests {
             )),
         );
 
-        let ctx = Arc::new(Context::new(PathBuf::new(), None));
+        #[cfg(feature = "tauri")]
+        let context = Context::new(PathBuf::new(), None);
+
+        #[cfg(not(feature = "tauri"))]
+        let context = Context::new(PathBuf::new());
+
+        let ctx = Arc::new(context);
 
         let emitter = NotificationEmitter::new();
 

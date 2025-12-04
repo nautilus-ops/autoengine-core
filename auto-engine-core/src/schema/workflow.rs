@@ -23,20 +23,18 @@ mod test {
         let yaml_str = r#"
 nodes:
   - action_type: Image
-    name: 图像识别
+    name: ImageMatch
     params:
       images:
         - a.png
   - action_type: MouseClick
-    name: 鼠标点击
+    name: MouseClick
     params:
       images:
         - a.png
-connections: [
-    {
-        "from": ""
-    }
-]
+connections:
+  - from: "a"
+    to: "b"
             "#;
         let node: WorkflowSchema = serde_yaml::from_str(yaml_str).unwrap();
 

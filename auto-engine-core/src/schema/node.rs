@@ -23,7 +23,7 @@ pub struct NodeSchema {
     #[deprecated(since = "0.2.2", note = "Use `input_data` instead")]
     pub params: Option<NodeParameters>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_data: Option<HashMap<String, String>>,
+    pub input_data: Option<serde_json::Value>,
     #[serde(default)]
     pub position: Position,
     #[serde(skip_serializing_if = "Option::is_none")]
