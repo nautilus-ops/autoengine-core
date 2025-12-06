@@ -6,14 +6,14 @@ pub const NODE_EVENT: &str = "node";
 pub struct NodeEventPayload {
     pub status: String,
     pub name: String,
-    pub result: Option<String>,
+    pub result: Option<serde_json::Value>,
 }
 
 impl NodeEventPayload {
     pub fn new<D: Serialize>(status: String, name: String, result: Option<D>) -> NodeEventPayload {
         let mut res = None;
         if let Some(data) = result {
-            res = Some(serde_json::to_string(&data).unwrap_or_else(|err| format!("{err}")))
+            res = Some(serde_json::to_value(&data).unwrap_or_default())
         }
 
         Self {

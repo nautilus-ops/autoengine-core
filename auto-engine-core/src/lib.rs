@@ -30,3 +30,4 @@ pub mod register;
 pub mod plugin;
 
 pub mod notification;
+mod action;

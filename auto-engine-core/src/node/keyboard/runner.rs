@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use enigo::{Direction, Enigo, Keyboard};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -9,6 +10,7 @@ use crate::{
         node::{NodeRunner, NodeRunnerFactory},
     },
 };
+use crate::types::node::{NodeRunnerControl, NodeRunnerController};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct KeyboardParams {
@@ -80,9 +82,9 @@ impl KeyboardNodeRunner {
 
 #[async_trait::async_trait]
 impl NodeRunner for KeyboardNodeRunner {
-    async fn run(&self, ctx: &Context, values: serde_json::Value) -> Result<(), String> {
-        let params: KeyboardParams = serde_json::from_value(values).map_err(|e| e.to_string())?;
+    type ParamType = KeyboardParams;
 
+    async fn run(&mut self, ctx: &Context, params: Self::ParamType) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         match params.mode {
             KeyBoardKeyMode::Type => {
                 let value = params
@@ -116,7 +118,7 @@ impl NodeRunner for KeyboardNodeRunner {
             }
         }
 
-        Ok(())
+        Ok(None)
     }
 }
 
@@ -137,7 +139,7 @@ impl KeyboardNodeFactory {
 }
 
 impl NodeRunnerFactory for KeyboardNodeFactory {
-    fn create(&self) -> Box<dyn NodeRunner> {
-        Box::new(KeyboardNodeRunner::new(self.enigo.clone()))
+    fn create(&self) -> Box<dyn NodeRunnerControl> {
+        Box::new(NodeRunnerController::new(KeyboardNodeRunner::new(self.enigo.clone())))
     }
 }

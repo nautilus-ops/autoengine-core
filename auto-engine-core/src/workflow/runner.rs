@@ -7,6 +7,7 @@ use futures::future::join_all;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 
+use crate::types::node::NodeDefine;
 use crate::{
     context::Context,
     event::{NODE_EVENT, NodeEventPayload, WORKFLOW_EVENT, WorkflowEventPayload, WorkflowStatus},
@@ -185,30 +186,45 @@ async fn handle_node(
                 .emit(NODE_EVENT, NodeEventPayload::running(node_id_clone.clone()))
                 .unwrap_or_default();
 
-            let runner = {
+            let (node, mut runner) = {
                 let locked_bus = bus.read().await;
-                match locked_bus.create_runner(&action) {
+                let node = match locked_bus.load_node(&action) {
+                    None => {
+                        return Err(format!("Can't find node : {}", action));
+                    }
+                    Some(node) => node,
+                };
+                let runner = match locked_bus.create_runner(&action) {
                     Some(runner) => runner,
                     None => {
                         return Err(format!("Can't find action runner for node: {}", action));
                     }
-                }
+                };
+                (node, runner)
             };
+
             let input_data = node_context.input_data.clone().unwrap_or_default();
-            let params = serde_json::to_value(&input_data).map_err(|e| e.to_string())?;
-            runner.run(&ctx, params).await.inspect_err(|_e| {
-                emitter
-                    .emit(
-                        NODE_EVENT,
-                        NodeEventPayload::error::<String>(node_id_clone.clone(), None),
-                    )
-                    .unwrap_or_default();
-            })?;
+            let res = runner
+                .run(
+                    &ctx,
+                    &node_context.metadata.name,
+                    input_data,
+                    node.input_schema(),
+                )
+                .await
+                .inspect_err(|_e| {
+                    emitter
+                        .emit(
+                            NODE_EVENT,
+                            NodeEventPayload::error::<String>(node_id_clone.clone(), None),
+                        )
+                        .unwrap_or_default();
+                })?;
 
             emitter
                 .emit(
                     NODE_EVENT,
-                    NodeEventPayload::success::<String>(node_id_clone, None),
+                    NodeEventPayload::success(node_id_clone, res),
                 )
                 .unwrap_or_default();
 
@@ -241,6 +257,7 @@ async fn handle_node(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::node::{NodeRunnerControl, NodeRunnerController};
     use crate::{
         register::bus::NodeRegisterBus,
         schema::{node::Position, workflow::Connection},
@@ -282,11 +299,11 @@ mod tests {
     }
 
     impl NodeRunnerFactory for TestRunnerFactory {
-        fn create(&self) -> Box<dyn NodeRunner> {
-            Box::new(TestRunner {
+        fn create(&self) -> Box<dyn NodeRunnerControl> {
+            Box::new(NodeRunnerController::new(TestRunner {
                 counter: Arc::clone(&self.counter),
                 params: Arc::clone(&self.params),
-            })
+            }))
         }
     }
 
@@ -297,14 +314,22 @@ mod tests {
 
     #[async_trait::async_trait]
     impl NodeRunner for TestRunner {
-        async fn run(&self, _ctx: &Context, param: serde_json::Value) -> Result<(), String> {
+        type ParamType = ();
+
+        async fn run(
+            &mut self,
+            _ctx: &Context,
+            param: Self::ParamType,
+        ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+            let value: JsonValue = serde_json::to_value(param).map_err(|e| e.to_string())?;
+
             self.counter.fetch_add(1, Ordering::SeqCst);
             let mut guard = self
                 .params
                 .lock()
                 .map_err(|e| format!("lock params failed: {e}"))?;
-            *guard = Some(param);
-            Ok(())
+            *guard = Some(value);
+            Ok(None)
         }
     }
 
@@ -353,7 +378,13 @@ mod tests {
             )),
         );
 
-        let ctx = Arc::new(Context::new(PathBuf::new(), None));
+        #[cfg(feature = "tauri")]
+        let context = Context::new(PathBuf::new(), None);
+
+        #[cfg(not(feature = "tauri"))]
+        let context = Context::new(PathBuf::new());
+
+        let ctx = Arc::new(context);
 
         let emitter = NotificationEmitter::new();
 

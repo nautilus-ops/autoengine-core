@@ -87,8 +87,13 @@ mod tests {
             },
         ];
 
+        #[cfg(feature = "tauri")]
         let context = Context::new(PathBuf::new(), None);
-        context.set_string_value("image.x", "2").await;
+
+        #[cfg(not(feature = "tauri"))]
+        let context = Context::new(PathBuf::new());
+
+        context.set_string_value("image.x", "2").await.unwrap();
 
         for t in tests {
             let got_err = t.conditions.check(&context).await.is_err();
