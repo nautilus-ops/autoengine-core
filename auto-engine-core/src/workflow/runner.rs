@@ -7,7 +7,6 @@ use futures::future::join_all;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 
-use crate::types::node::NodeDefine;
 use crate::{
     context::Context,
     event::{NODE_EVENT, NodeEventPayload, WORKFLOW_EVENT, WorkflowEventPayload, WorkflowStatus},
@@ -77,8 +76,8 @@ impl WorkflowRunner {
         let mut edges: HashMap<String, Vec<String>> = HashMap::new();
         let mut start_nodes = vec![];
 
-        for (i, node_context) in workflow.nodes.into_iter().enumerate() {
-            let key = format!("node-{i}");
+        for node_context in workflow.nodes.into_iter() {
+            let key = node_context.node_id.clone();
             if node_context.action_type == "Start" {
                 start_nodes.push(key.clone());
             }
@@ -222,10 +221,7 @@ async fn handle_node(
                 })?;
 
             emitter
-                .emit(
-                    NODE_EVENT,
-                    NodeEventPayload::success(node_id_clone, res),
-                )
+                .emit(NODE_EVENT, NodeEventPayload::success(node_id_clone, res))
                 .unwrap_or_default();
 
             handle_node(next_nodes, ctx, token_clone, bus, emitter).await?;
@@ -338,6 +334,7 @@ mod tests {
         let workflow = WorkflowSchema {
             nodes: vec![
                 NodeSchema {
+                    node_id: "node1".to_string(),
                     action_type: "Start".to_string(),
                     metadata: metadata("start"),
                     params: None,
@@ -347,6 +344,7 @@ mod tests {
                     type_define: None,
                 },
                 NodeSchema {
+                    node_id: "node-2".to_string(),
                     action_type: "Custom".to_string(),
                     metadata: metadata("custom"),
                     params: Some(HashMap::from([(
@@ -406,6 +404,7 @@ mod tests {
         let workflow = WorkflowSchema {
             nodes: vec![
                 NodeSchema {
+                    node_id: "node-1".to_string(),
                     action_type: "Start".to_string(),
                     metadata: metadata("start"),
                     params: None,
@@ -415,6 +414,7 @@ mod tests {
                     type_define: None,
                 },
                 NodeSchema {
+                    node_id: "node-2".to_string(),
                     action_type: "Custom".to_string(),
                     metadata: metadata("custom"),
                     params: None,

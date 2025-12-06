@@ -228,17 +228,17 @@ impl ActionRunner {
                                 ),
                             );
 
-                            context
+                            let _ = context
                                 .set_string_value(format!("{name}.{img}").as_str(), "true")
                                 .await;
 
-                            context
+                            let _ = context
                                 .set_string_value(
                                     format!("{name}.{img}.x").as_str(),
                                     format!("{}", point.x).as_str(),
                                 )
                                 .await;
-                            context
+                            let _ = context
                                 .set_string_value(
                                     format!("{name}.{img}.y").as_str(),
                                     format!("{}", point.y).as_str(),

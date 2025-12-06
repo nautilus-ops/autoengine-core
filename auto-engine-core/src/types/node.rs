@@ -107,27 +107,39 @@ where
                 .clone();
 
             if let serde_json::Value::String(s) = &val {
-                let res = utils::parse_variables(ctx, &s).await;
+                let res = utils::parse_variables(ctx, s).await;
                 val = match field.field_type {
                     FieldType::String | FieldType::Image | FieldType::File => {
                         serde_json::Value::String(res.clone())
                     }
-                    FieldType::Number => {
-                        if let Ok(i) = res.parse::<i64>() {
-                            serde_json::Value::Number(i.into())
-                        } else if let Ok(f) = res.parse::<f64>() {
-                            serde_json::Number::from_f64(f)
+                    FieldType::Number => match res.trim() {
+                        "" => serde_json::Value::Number(0.into()),
+
+                        s if s.parse::<i64>().is_ok() => {
+                            serde_json::Value::Number(s.parse::<i64>().unwrap().into())
+                        }
+
+                        s if s.parse::<f64>().is_ok() => {
+                            serde_json::Number::from_f64(s.parse::<f64>().unwrap())
                                 .map(serde_json::Value::Number)
                                 .unwrap_or(serde_json::Value::Null)
-                        } else {
-                            return Err(format!("Field '{}' cannot be parsed as a number: {}", field.name, res));
                         }
-                    }
-                    FieldType::Boolean => {
-                        match res.to_lowercase().as_str() {
-                            "true" | "1" => serde_json::Value::Bool(true),
-                            "false" | "0" => serde_json::Value::Bool(false),
-                            _ => return Err(format!("Field '{}' cannot be parsed as a boolean: {}", field.name, res)),
+
+                        s => {
+                            return Err(format!(
+                                "Field '{}' cannot be parsed as a number: {}",
+                                field.name, s
+                            ));
+                        }
+                    },
+                    FieldType::Boolean => match res.to_lowercase().as_str() {
+                        "true" | "1" => serde_json::Value::Bool(true),
+                        "false" | "0" => serde_json::Value::Bool(false),
+                        _ => {
+                            return Err(format!(
+                                "Field '{}' cannot be parsed as a boolean: {}",
+                                field.name, res
+                            ));
                         }
                     },
                     FieldType::Array => {
@@ -154,10 +166,11 @@ where
         .map_err(|e| format!("Failed to parse node parameters: {}", e))?;
 
         if let Some(result) = self.runner.run(ctx, params).await? {
-            for (name,value) in result.iter() {
-                ctx.set_value(format!("ctx.{}.{}",node_name, name).as_str(), value).await?;
+            for (name, value) in result.iter() {
+                ctx.set_value(format!("ctx.{}.{}", node_name, name).as_str(), value)
+                    .await?;
             }
-            return Ok(Some(result))
+            return Ok(Some(result));
         }
         Ok(None)
     }

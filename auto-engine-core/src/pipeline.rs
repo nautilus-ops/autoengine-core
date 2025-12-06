@@ -119,7 +119,9 @@ fn handle_pipeline(
 
                 let pipeline = pipeline.clone();
                 let dir_path = dir_path.clone();
-                let context = Arc::new(Context::new(dir_path, Some(app_handle.clone())).with_screen_scale(rate));
+                let context = Arc::new(
+                    Context::new(dir_path, Some(app_handle.clone())).with_screen_scale(rate),
+                );
 
                 for stage in pipeline {
                     match handle_stage_with_app(

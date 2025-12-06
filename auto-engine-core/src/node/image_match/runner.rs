@@ -5,7 +5,6 @@ use opencv::core::{Mat, MatTraitConst, Point, Size};
 use opencv::imgproc::TM_CCOEFF_NORMED;
 use opencv::{imgcodecs, imgproc};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -111,7 +110,6 @@ impl NodeRunner for ImageMatchRunner {
             param.template_image
         );
 
-
         template_mat = self.resize_mat(&template_mat, param.resize)?;
         source_mat = self.resize_mat(&source_mat, param.resize)?;
 
@@ -154,9 +152,7 @@ impl NodeRunner for ImageMatchRunner {
             (center_x, center_y, max_val)
         } else {
             return Err(
-                format!("Failed to find image image. max image score {max_val}")
-                    .to_string()
-                    .into(),
+                format!("Failed to find image image. max image score {max_val}").to_string(),
             );
         };
 

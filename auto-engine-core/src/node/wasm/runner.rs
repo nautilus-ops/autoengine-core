@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use crate::Plugin;
 use crate::context::Context;
 use crate::plugin::loader::PluginState;
 use crate::types::node::{NodeRunner, NodeRunnerControl, NodeRunnerController, NodeRunnerFactory};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use wasmtime::Store;
 
@@ -21,7 +21,11 @@ pub struct WasmRunner {
 impl NodeRunner for WasmRunner {
     type ParamType = serde_json::Value;
 
-    async fn run(&mut self, _ctx: &Context, _param: serde_json::Value) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+    async fn run(
+        &mut self,
+        _ctx: &Context,
+        _param: serde_json::Value,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let mut runtime = self
             .runtime
             .lock()

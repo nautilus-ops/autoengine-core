@@ -16,7 +16,10 @@ pub async fn parse_variables(context: &Context, input: &str) -> String {
             let default = caps.get(2).map(|m| m.as_str()).unwrap_or("");
 
             if let Some(value) = ctx.get(var_name) {
-                return serde_json::to_string(&value).unwrap_or_default().trim_matches('"').to_string();
+                return serde_json::to_string(&value)
+                    .unwrap_or_default()
+                    .trim_matches('"')
+                    .to_string();
             }
             default.to_string()
         })
@@ -25,8 +28,8 @@ pub async fn parse_variables(context: &Context, input: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
     use super::*;
+    use std::borrow::Cow;
     use std::path::PathBuf;
 
     #[tokio::test]
@@ -65,7 +68,10 @@ mod tests {
         #[cfg(not(feature = "tauri"))]
         let context = Context::new(PathBuf::new());
 
-        context.set_string_value("test", "test_value").await.unwrap();
+        context
+            .set_string_value("test", "test_value")
+            .await
+            .unwrap();
         context.set_string_value("none.a", "a").await.unwrap();
 
         for t in tests {

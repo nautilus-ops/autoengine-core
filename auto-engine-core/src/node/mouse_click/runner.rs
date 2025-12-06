@@ -1,13 +1,13 @@
-use std::collections::HashMap;
 use enigo::{Button, Enigo, Mouse};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use crate::types::node::{NodeRunnerControl, NodeRunnerController};
 use crate::{
     context::Context,
     types::node::{NodeRunner, NodeRunnerFactory},
 };
-use crate::types::node::{NodeRunnerControl, NodeRunnerController};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct MouseClickParams {
@@ -34,8 +34,11 @@ impl MouseClickRunner {
 impl NodeRunner for MouseClickRunner {
     type ParamType = MouseClickParams;
 
-    async fn run(&mut self, _ctx: &Context, params: Self::ParamType) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
-
+    async fn run(
+        &mut self,
+        _ctx: &Context,
+        params: Self::ParamType,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let mut enigo = self
             .enigo
             .lock()
@@ -67,6 +70,6 @@ impl MouseClickNodeFactory {
 
 impl NodeRunnerFactory for MouseClickNodeFactory {
     fn create(&self) -> Box<dyn NodeRunnerControl> {
-        Box::new(NodeRunnerController::new(MouseClickRunner::new()) )
+        Box::new(NodeRunnerController::new(MouseClickRunner::new()))
     }
 }

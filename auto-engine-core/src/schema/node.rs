@@ -17,6 +17,7 @@ pub struct Position {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct NodeSchema {
+    pub node_id: String,
     pub action_type: String,
     #[serde(flatten)]
     pub metadata: MetaData,

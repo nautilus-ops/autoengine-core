@@ -111,7 +111,7 @@ macro_rules! map_keys {
             fn to_key_code(&self) -> Option<KeyCode> {
                 use convert_case::{Case, Casing};
                 let key = self.to_case(Case::Pascal);
-                
+
                 match key.as_str() {
                     $(
                         stringify!($keycode) => Some(KeyCode::$keycode),
@@ -242,12 +242,18 @@ mod tests {
         for case in cases {
             let parsed = case.raw.to_string().to_key_code();
             let matches = match (&parsed, &case.expected) {
-                (Some(got), Some(expected)) => std::mem::discriminant(got) == std::mem::discriminant(expected),
+                (Some(got), Some(expected)) => {
+                    std::mem::discriminant(got) == std::mem::discriminant(expected)
+                }
                 (None, None) => true,
                 _ => false,
             };
 
-            assert!(matches, "input `{}` parsed to {:?}, expected {:?}", case.raw, parsed, case.expected);
+            assert!(
+                matches,
+                "input `{}` parsed to {:?}, expected {:?}",
+                case.raw, parsed, case.expected
+            );
         }
     }
 

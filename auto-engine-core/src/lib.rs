@@ -29,5 +29,5 @@ pub mod register;
 #[cfg(feature = "wasm")]
 pub mod plugin;
 
-pub mod notification;
 mod action;
+pub mod notification;

@@ -1,10 +1,10 @@
-use std::collections::HashMap;
 use enigo::{Coordinate, Enigo, Mouse};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::types::node::{NodeRunnerControl, NodeRunnerController, NodeRunnerFactory};
-use crate::{context::Context, types::node::NodeRunner, utils::parse_variables};
+use crate::{context::Context, types::node::NodeRunner};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct MouseMoveParams {
@@ -32,7 +32,11 @@ impl MouseMoveRunner {
 impl NodeRunner for MouseMoveRunner {
     type ParamType = MouseMoveParams;
 
-    async fn run(&mut self, ctx: &Context, params: Self::ParamType) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+    async fn run(
+        &mut self,
+        ctx: &Context,
+        params: Self::ParamType,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let x: i32 = params.x;
 
         let y: i32 = params.y;
