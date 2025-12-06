@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::Plugin;
 use crate::context::Context;
 use crate::plugin::loader::PluginState;
@@ -20,7 +21,7 @@ pub struct WasmRunner {
 impl NodeRunner for WasmRunner {
     type ParamType = serde_json::Value;
 
-    async fn run(&mut self, _ctx: &Context, _param: serde_json::Value) -> Result<(), String> {
+    async fn run(&mut self, _ctx: &Context, _param: serde_json::Value) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let mut runtime = self
             .runtime
             .lock()
@@ -38,7 +39,7 @@ impl NodeRunner for WasmRunner {
             Err(err) => return Err(format!("Wasm node execution failed: {}", err)),
         }
 
-        Ok(())
+        Ok(None)
     }
 }
 

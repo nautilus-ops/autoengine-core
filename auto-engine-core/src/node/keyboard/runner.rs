@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use enigo::{Direction, Enigo, Keyboard};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -83,7 +84,7 @@ impl KeyboardNodeRunner {
 impl NodeRunner for KeyboardNodeRunner {
     type ParamType = KeyboardParams;
 
-    async fn run(&mut self, ctx: &Context, params: Self::ParamType) -> Result<(), String> {
+    async fn run(&mut self, ctx: &Context, params: Self::ParamType) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         match params.mode {
             KeyBoardKeyMode::Type => {
                 let value = params
@@ -117,7 +118,7 @@ impl NodeRunner for KeyboardNodeRunner {
             }
         }
 
-        Ok(())
+        Ok(None)
     }
 }
 

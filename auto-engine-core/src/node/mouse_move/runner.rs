@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use enigo::{Coordinate, Enigo, Mouse};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -31,7 +32,7 @@ impl MouseMoveRunner {
 impl NodeRunner for MouseMoveRunner {
     type ParamType = MouseMoveParams;
 
-    async fn run(&mut self, ctx: &Context, params: Self::ParamType) -> Result<(), String> {
+    async fn run(&mut self, ctx: &Context, params: Self::ParamType) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let x: i32 = params.x;
 
         let y: i32 = params.y;
@@ -46,7 +47,7 @@ impl NodeRunner for MouseMoveRunner {
         enigo
             .move_mouse(x / rate as i32, y / rate as i32, Coordinate::Abs)
             .map_err(|err| format!("Failed to move_mouse: {err}"))?;
-        Ok(())
+        Ok(None)
     }
 }
 

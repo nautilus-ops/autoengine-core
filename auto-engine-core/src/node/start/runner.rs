@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::{
     context::Context,
     types::node::{NodeRunner, NodeRunnerFactory},
@@ -19,10 +20,10 @@ impl StartRunner {
 impl NodeRunner for StartRunner {
     type ParamType = serde_json::Value;
 
-    async fn run(&mut self, _ctx: &Context, _param: serde_json::Value) -> Result<(), String> {
+    async fn run(&mut self, _ctx: &Context, _param: serde_json::Value) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         // nothing need to do
         log::info!("Start workflow!");
-        Ok(())
+        Ok(None)
     }
 }
 

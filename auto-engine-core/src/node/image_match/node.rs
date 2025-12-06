@@ -75,8 +75,9 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec!["Grayscale".to_string(), "Color".to_string()],
                 default: Some("Grayscale".to_string()),
-            },SchemaField {
-                name: "screenshot".to_string(),
+            },
+            SchemaField {
+                name: "use_screenshot".to_string(),
                 field_type: FieldType::Boolean,
                 description: Some(I18nValue {
                     zh: "是否使用桌面截图作为源图片？".to_string(),
@@ -84,6 +85,16 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec![],
                 default: None,
+            },
+            SchemaField {
+                name: "resize".to_string(),
+                field_type: FieldType::Number,
+                description: Some(I18nValue {
+                    zh: "图片大小倍率，倍率越小匹配速度越快，精度越低".to_string(),
+                    en: "Image scaling factor: The smaller the scaling factor, the faster the matching speed but the lower the accuracy.".to_string(),
+                }),
+                enums: vec![String::from("0.5"), String::from("1"), String::from("2")],
+                default: Some(String::from("1")),
             },
             SchemaField {
                 name: "template_image".to_string(),

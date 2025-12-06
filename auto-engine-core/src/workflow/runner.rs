@@ -204,8 +204,13 @@ async fn handle_node(
             };
 
             let input_data = node_context.input_data.clone().unwrap_or_default();
-            runner
-                .run(&ctx, input_data, node.input_schema())
+            let res = runner
+                .run(
+                    &ctx,
+                    &node_context.metadata.name,
+                    input_data,
+                    node.input_schema(),
+                )
                 .await
                 .inspect_err(|_e| {
                     emitter
@@ -219,7 +224,7 @@ async fn handle_node(
             emitter
                 .emit(
                     NODE_EVENT,
-                    NodeEventPayload::success::<String>(node_id_clone, None),
+                    NodeEventPayload::success(node_id_clone, res),
                 )
                 .unwrap_or_default();
 
@@ -311,7 +316,11 @@ mod tests {
     impl NodeRunner for TestRunner {
         type ParamType = ();
 
-        async fn run(&mut self, _ctx: &Context, param: Self::ParamType) -> Result<(), String> {
+        async fn run(
+            &mut self,
+            _ctx: &Context,
+            param: Self::ParamType,
+        ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
             let value: JsonValue = serde_json::to_value(param).map_err(|e| e.to_string())?;
 
             self.counter.fetch_add(1, Ordering::SeqCst);
@@ -320,7 +329,7 @@ mod tests {
                 .lock()
                 .map_err(|e| format!("lock params failed: {e}"))?;
             *guard = Some(value);
-            Ok(())
+            Ok(None)
         }
     }
 

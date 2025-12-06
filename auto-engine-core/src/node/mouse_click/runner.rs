@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use enigo::{Button, Enigo, Mouse};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -33,7 +34,7 @@ impl MouseClickRunner {
 impl NodeRunner for MouseClickRunner {
     type ParamType = MouseClickParams;
 
-    async fn run(&mut self, _ctx: &Context, params: Self::ParamType) -> Result<(), String> {
+    async fn run(&mut self, _ctx: &Context, params: Self::ParamType) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
 
         let mut enigo = self
             .enigo
@@ -51,7 +52,7 @@ impl NodeRunner for MouseClickRunner {
         enigo
             .button(btn, enigo::Direction::Click)
             .map_err(|err| format!("Failed to click {}: {err}", params.value))?;
-        Ok(())
+        Ok(None)
     }
 }
 

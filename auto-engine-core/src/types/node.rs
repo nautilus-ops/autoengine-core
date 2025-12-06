@@ -1,9 +1,8 @@
-use std::collections::HashMap;
-use std::ops::Index;
 use crate::context::Context;
-use serde::{Deserialize, Serialize};
-use serde::de::DeserializeOwned;
 use crate::utils;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub struct I18nValue {
@@ -68,7 +67,13 @@ pub trait NodeDefine: Send + Sync {
 
 #[async_trait::async_trait]
 pub trait NodeRunnerControl: Send + Sync {
-    async fn run(&mut self, ctx: &Context, params: HashMap<String,serde_json::Value>, schema_field: Vec<SchemaField>) -> Result<(), String>;
+    async fn run(
+        &mut self,
+        ctx: &Context,
+        node_name: &str,
+        params: HashMap<String, serde_json::Value>,
+        schema_field: Vec<SchemaField>,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String>;
 }
 
 pub struct NodeRunnerController<T: NodeRunner> {
@@ -82,15 +87,27 @@ impl<T: NodeRunner> NodeRunnerController<T> {
 }
 
 #[async_trait::async_trait]
-impl<T> NodeRunnerControl for NodeRunnerController<T> where T: NodeRunner {
-    async fn run(&mut self, ctx: &Context, params: HashMap<String,serde_json::Value>, schema_field: Vec<SchemaField>) -> Result<(), String> {
+impl<T> NodeRunnerControl for NodeRunnerController<T>
+where
+    T: NodeRunner,
+{
+    async fn run(
+        &mut self,
+        ctx: &Context,
+        node_name: &str,
+        params: HashMap<String, serde_json::Value>,
+        schema_field: Vec<SchemaField>,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let mut params = params;
         for field in schema_field.iter() {
             let default = field.default.clone().unwrap_or_default();
-            let mut val = params.get(&field.name).unwrap_or(&serde_json::Value::String(default)).clone();
+            let mut val = params
+                .get(&field.name)
+                .unwrap_or(&serde_json::Value::String(default))
+                .clone();
 
             if let serde_json::Value::String(s) = &val {
-                let res =  utils::parse_variables(ctx, &s).await;
+                let res = utils::parse_variables(ctx, &s).await;
                 val = match field.field_type {
                     FieldType::String | FieldType::Image | FieldType::File => {
                         serde_json::Value::String(res.clone())
@@ -112,12 +129,18 @@ impl<T> NodeRunnerControl for NodeRunnerController<T> where T: NodeRunner {
                             "false" | "0" => serde_json::Value::Bool(false),
                             _ => return Err(format!("Field '{}' cannot be parsed as a boolean: {}", field.name, res)),
                         }
-                    }
+                    },
                     FieldType::Array => {
-                        return Err(format!("Field '{}' cannot be parsed as an array: {}", field.name, res));
+                        return Err(format!(
+                            "Field '{}' cannot be parsed as an array: {}",
+                            field.name, res
+                        ));
                     }
                     FieldType::Object => {
-                        return Err(format!("Field '{}' cannot be parsed as an object: {}", field.name, res));
+                        return Err(format!(
+                            "Field '{}' cannot be parsed as an object: {}",
+                            field.name, res
+                        ));
                     }
                 };
             }
@@ -125,19 +148,29 @@ impl<T> NodeRunnerControl for NodeRunnerController<T> where T: NodeRunner {
             params.insert(field.name.clone(), val);
         }
 
-        let params: T::ParamType = serde_json::from_value(serde_json::Value::Object(serde_json::map::Map::from_iter(params))).
-            map_err(|e| format!("Failed to parse node parameters: {}", e))?;
+        let params: T::ParamType = serde_json::from_value(serde_json::Value::Object(
+            serde_json::map::Map::from_iter(params),
+        ))
+        .map_err(|e| format!("Failed to parse node parameters: {}", e))?;
 
-        self.runner.run(ctx, params).await?;
-        Ok(())
+        if let Some(result) = self.runner.run(ctx, params).await? {
+            for (name,value) in result.iter() {
+                ctx.set_value(format!("ctx.{}.{}",node_name, name).as_str(), value).await?;
+            }
+            return Ok(Some(result))
+        }
+        Ok(None)
     }
 }
-
 
 #[async_trait::async_trait]
 pub trait NodeRunner: Send + Sync {
     type ParamType: Serialize + DeserializeOwned + Send + Sync;
-    async fn run(&mut self, ctx: &Context, param: Self::ParamType) -> Result<(), String>;
+    async fn run(
+        &mut self,
+        ctx: &Context,
+        param: Self::ParamType,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String>;
 }
 
 pub trait NodeRunnerFactory: Send + Sync {

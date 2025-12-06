@@ -1,4 +1,4 @@
-mod screenshot;
+pub mod screenshot;
 
 pub struct Action {}
 
