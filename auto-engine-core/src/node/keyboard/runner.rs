@@ -24,6 +24,8 @@ pub struct KeyboardParams {
 #[derive(Clone)]
 pub struct KeyboardNodeRunner {
     enigo: Arc<Mutex<Enigo>>,
+    // #[cfg(feature = "tauri")]
+    // pub(crate) app_handle: Option<tauri::AppHandle>,
 }
 
 impl KeyboardNodeRunner {

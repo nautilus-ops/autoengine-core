@@ -1,10 +1,12 @@
+use std::pin::Pin;
+use std::time::Duration;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
 };
-
-use futures::future::join_all;
 use tokio::sync::RwLock;
+use tokio::task::JoinSet;
+use tokio::time::{Instant, sleep_until};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -138,17 +140,70 @@ impl WorkflowRunner {
             },
         )?;
 
-        let res = handle_node(self.graph.clone(), ctx, token, bus, emitter.clone()).await;
+        let mut main_task = JoinSet::new();
 
-        emitter.emit(
-            WORKFLOW_EVENT,
-            WorkflowEventPayload {
-                status: WorkflowStatus::Finished,
-            },
-        )?;
+        process(
+            self.graph.clone(),
+            ctx,
+            token,
+            bus,
+            emitter.clone(),
+            &mut main_task,
+            "begin".to_string(),
+        );
 
-        res
+        tokio::task::spawn(async move {
+            let mut res: Result<(), String> = Ok(());
+            while let Some(r) = main_task.join_next().await {
+                match r {
+                    Ok(result) => {
+                        if let Err(e) = result {
+                            res = Err(e);
+                        }
+                    }
+                    Err(e) => {
+                        res = Err(e.to_string());
+                    }
+                }
+            }
+
+            emitter
+                .emit(
+                    WORKFLOW_EVENT,
+                    WorkflowEventPayload {
+                        status: WorkflowStatus::Finished,
+                    },
+                )
+                .unwrap_or_default();
+        });
+
+        Ok(())
     }
+}
+
+fn process(
+    graph: Vec<Arc<std::sync::RwLock<GraphNode>>>,
+    ctx: Arc<Context>,
+    token: CancellationToken,
+    bus: Arc<RwLock<NodeRegisterBus>>,
+    emitter: Arc<NotificationEmitter>,
+    tasks: &mut JoinSet<Result<(), String>>,
+    parent: String,
+) {
+    log::info!("node {parent} has finished, next node {}", graph.len());
+    let token_clone = token.clone();
+    let emitter_clone = emitter.clone();
+    tasks.spawn(async move {
+        log::info!("===> next node {}", graph.len());
+        tokio::select! {
+            _ = token.cancelled() => {
+                log::info!("Pipeline terminated, exiting loop");
+                emitter.emit(NODE_EVENT, NodeEventPayload::cancel()).unwrap_or_default();
+                Ok(())
+            },
+            result = handle_node(graph,ctx,token_clone,bus,emitter_clone) => result
+        }
+    });
 }
 
 async fn handle_node(
@@ -158,18 +213,18 @@ async fn handle_node(
     bus: Arc<RwLock<NodeRegisterBus>>,
     emitter: Arc<NotificationEmitter>,
 ) -> Result<(), String> {
-    let mut tasks = Vec::new();
+    let mut task = JoinSet::new();
 
     for node in graph.iter() {
-        let bus = bus.clone();
+        let bus_clone = bus.clone();
 
         let node = node.clone();
-        let ctx = ctx.clone();
-        let token_clone = token.clone();
+        let ctx_clone = ctx.clone();
         let emitter_clone = emitter.clone();
 
         let (node_id, action, node_context, next_nodes) = {
             let node_reader = node.read().unwrap();
+            log::info!("handle node {}", node_reader.node_context.action_type);
             (
                 node_reader.node_id.clone(),
                 node_reader.node_context.action_type.clone(),
@@ -179,87 +234,197 @@ async fn handle_node(
         };
 
         let node_id_clone = node_id.clone();
+
+        let (node, mut runner) = {
+            let locked_bus = bus_clone.read().await;
+            let node = match locked_bus.load_node(&action) {
+                None => {
+                    return Err(format!("Can't find node : {}", action));
+                }
+                Some(node) => node,
+            };
+            let runner = match locked_bus.create_runner(&action) {
+                Some(runner) => runner,
+                None => {
+                    return Err(format!("Can't find action runner for node: {}", action));
+                }
+            };
+            (node, runner)
+        };
+
         let handle = async move {
             let emitter = emitter_clone;
             emitter
                 .emit(NODE_EVENT, NodeEventPayload::running(node_id_clone.clone()))
                 .unwrap_or_default();
 
-            let (node, mut runner) = {
-                let locked_bus = bus.read().await;
-                let node = match locked_bus.load_node(&action) {
-                    None => {
-                        return Err(format!("Can't find node : {}", action));
-                    }
-                    Some(node) => node,
-                };
-                let runner = match locked_bus.create_runner(&action) {
-                    Some(runner) => runner,
-                    None => {
-                        return Err(format!("Can't find action runner for node: {}", action));
-                    }
-                };
-                (node, runner)
-            };
+            let retry = node_context.metadata.retry.unwrap_or(0);
+            let delay = node_context.metadata.duration.unwrap_or(0) as u64;
+            let node_name = node_context.metadata.name.clone();
+            let ctx = ctx_clone.clone();
 
-            let input_data = node_context.input_data.clone().unwrap_or_default();
-            let res = runner
-                .run(
-                    &ctx,
-                    &node_context.metadata.name,
-                    input_data,
-                    node.input_schema(),
-                )
-                .await
-                .inspect_err(|_e| {
+            if retry <= -1 {
+                // Infinite retry with a minimum interval between attempts.
+                let min_interval = Duration::from_millis(200);
+                let mut next_tick = Instant::now();
+                loop {
+                    let run_input = node_context.input_data.clone().unwrap_or_default();
+                    match runner
+                        .run(&ctx, &node_name, run_input, node.input_schema())
+                        .await
+                    {
+                        Ok(res) => {
+                            emitter
+                                .emit(
+                                    NODE_EVENT,
+                                    NodeEventPayload::success(node_id_clone.clone(), res.clone()),
+                                )
+                                .unwrap_or_default();
+                            break;
+                        }
+                        Err(_) => {
+                            next_tick += min_interval;
+                            let now = Instant::now();
+                            if next_tick > now {
+                                sleep_until(next_tick).await;
+                            } else {
+                                next_tick = now;
+                            }
+                        }
+                    };
+                }
+            } else {
+                let mut last_err = None;
+                // Total attempts = 1 (initial) + retry.
+                for attempt in 0..=retry {
+                    let run_input = node_context.input_data.clone().unwrap_or_default();
+                    match runner
+                        .run(&ctx, &node_name, run_input, node.input_schema())
+                        .await
+                    {
+                        Ok(res) => {
+                            emitter
+                                .emit(
+                                    NODE_EVENT,
+                                    NodeEventPayload::success(node_id_clone.clone(), res.clone()),
+                                )
+                                .unwrap_or_default();
+                            last_err = None;
+                            break;
+                        }
+                        Err(e) => {
+                            last_err = Some(e);
+                            if attempt < retry {
+                                tokio::time::sleep(Duration::from_millis(delay)).await;
+                            }
+                        }
+                    }
+                }
+
+                if let Some(err) = last_err {
                     emitter
                         .emit(
                             NODE_EVENT,
                             NodeEventPayload::error::<String>(node_id_clone.clone(), None),
                         )
                         .unwrap_or_default();
-                })?;
-
-            emitter
-                .emit(NODE_EVENT, NodeEventPayload::success(node_id_clone, res))
-                .unwrap_or_default();
-
-            handle_node(next_nodes, ctx, token_clone, bus, emitter).await?;
+                    return Err(err);
+                }
+            }
 
             Ok(())
         };
 
-        let cancel_token = token.clone();
+        handle.await?;
 
-        let emitter = emitter.clone();
-        tasks.push(async move {
-            tokio::select! {
-                _ = cancel_token.cancelled() => {
-                    log::info!("Pipeline terminated, exiting loop");
-                    emitter.emit(NODE_EVENT, NodeEventPayload::cancel()).unwrap_or_default();
-                    Ok(())
-                }
-                res = handle => res,
-            }
-        });
+        log::info!("node {} finished", node_context.action_type);
+
+        process(
+            next_nodes,
+            ctx.clone(),
+            token.clone(),
+            bus.clone(),
+            emitter.clone(),
+            &mut task,
+            node_context.action_type,
+        );
     }
-    for res in join_all(tasks).await {
-        res?
+
+    while let Some(res) = task.join_next().await {
+        if let Err(e) = res {
+            return Err(e.to_string());
+        }
+        if let Ok(result) = res {
+            return result;
+        }
     }
 
     Ok(())
 }
 
+pub async fn handle_retry<F, Fut, R>(
+    retry: i32,
+    delay_ms: u64,
+    min_interval: u64,
+    mut handle: F,
+) -> Result<R, String>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<R, String>>,
+{
+    let mut last_err = match handle().await {
+        Ok(result) => return Ok(result),
+        Err(err) => Some(err),
+    };
+
+    let min_interval = Duration::from_millis(min_interval);
+    let mut next_tick = Instant::now();
+
+    if retry <= -1 {
+        loop {
+            match handle().await {
+                Ok(res) => return Ok(res),
+                Err(err) => {
+                    log::error!("{}", err);
+                    next_tick += min_interval;
+
+                    let now = Instant::now();
+                    if next_tick > now {
+                        sleep_until(next_tick).await;
+                    } else {
+                        next_tick = now;
+                    }
+                }
+            }
+        }
+    } else {
+        for attempt in 0..retry {
+            match handle().await {
+                Ok(res) => return Ok(res),
+                Err(err) => {
+                    last_err = Some(err);
+                    if attempt + 1 < retry {
+                        tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+                    }
+                }
+            }
+        }
+    }
+
+    Err(last_err.unwrap_or_else(|| "retry failed, unknown error".to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::node::start::{node::StartNode, runner::StartRunnerFactory};
     use crate::types::node::{NodeRunnerControl, NodeRunnerController};
     use crate::{
         register::bus::NodeRegisterBus,
         schema::{node::Position, workflow::Connection},
         types::{
             MetaData,
-            node::{NodeRunner, NodeRunnerFactory},
+            node::{I18nValue, NodeDefine, NodeRunner, NodeRunnerFactory, SchemaField},
         },
     };
     use serde_json::Value as JsonValue;
@@ -303,6 +468,42 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
+    struct TestNodeDefine;
+
+    impl NodeDefine for TestNodeDefine {
+        fn action_type(&self) -> String {
+            "Custom".to_string()
+        }
+
+        fn name(&self) -> I18nValue {
+            I18nValue {
+                zh: "自定义".to_string(),
+                en: "Custom".to_string(),
+            }
+        }
+
+        fn icon(&self) -> String {
+            String::new()
+        }
+
+        fn category(&self) -> Option<I18nValue> {
+            None
+        }
+
+        fn description(&self) -> Option<I18nValue> {
+            None
+        }
+
+        fn output_schema(&self) -> Vec<SchemaField> {
+            vec![]
+        }
+
+        fn input_schema(&self) -> Vec<SchemaField> {
+            vec![]
+        }
+    }
+
     struct TestRunner {
         counter: Arc<AtomicUsize>,
         params: Arc<Mutex<Option<JsonValue>>>,
@@ -334,7 +535,7 @@ mod tests {
         let workflow = WorkflowSchema {
             nodes: vec![
                 NodeSchema {
-                    node_id: "node1".to_string(),
+                    node_id: "node-0".to_string(),
                     action_type: "Start".to_string(),
                     metadata: metadata("start"),
                     params: None,
@@ -344,7 +545,7 @@ mod tests {
                     type_define: None,
                 },
                 NodeSchema {
-                    node_id: "node-2".to_string(),
+                    node_id: "node-1".to_string(),
                     action_type: "Custom".to_string(),
                     metadata: metadata("custom"),
                     params: Some(HashMap::from([(
@@ -367,9 +568,13 @@ mod tests {
         let counter = Arc::new(AtomicUsize::new(0));
         let params = Arc::new(Mutex::new(None));
 
-        let mut bus = NodeRegisterBus::new().with_internal_nodes();
-        bus.register_runner(
-            "Custom".to_string(),
+        let mut bus = NodeRegisterBus::new();
+        bus.register(
+            Box::new(StartNode::new()),
+            Box::new(StartRunnerFactory::new()),
+        );
+        bus.register(
+            Box::new(TestNodeDefine::default()),
             Box::new(TestRunnerFactory::new(
                 Arc::clone(&counter),
                 Arc::clone(&params),
@@ -404,7 +609,7 @@ mod tests {
         let workflow = WorkflowSchema {
             nodes: vec![
                 NodeSchema {
-                    node_id: "node-1".to_string(),
+                    node_id: "node-0".to_string(),
                     action_type: "Start".to_string(),
                     metadata: metadata("start"),
                     params: None,
@@ -414,7 +619,7 @@ mod tests {
                     type_define: None,
                 },
                 NodeSchema {
-                    node_id: "node-2".to_string(),
+                    node_id: "node-1".to_string(),
                     action_type: "Custom".to_string(),
                     metadata: metadata("custom"),
                     params: None,

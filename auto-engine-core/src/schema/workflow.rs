@@ -22,12 +22,14 @@ mod test {
     pub fn test_deserialize() {
         let yaml_str = r#"
 nodes:
-  - action_type: Image
+  - node_id: a
+    action_type: Image
     name: ImageMatch
     params:
       images:
         - a.png
-  - action_type: MouseClick
+  - node_id: b
+    action_type: MouseClick
     name: MouseClick
     params:
       images:

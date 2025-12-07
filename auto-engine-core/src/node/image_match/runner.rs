@@ -6,7 +6,8 @@ use opencv::imgproc::TM_CCOEFF_NORMED;
 use opencv::{imgcodecs, imgproc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::Instant;
+use std::time::{Duration, Instant};
+use tokio::time::sleep;
 
 #[derive(Default, Serialize, Deserialize, Clone)]
 pub struct ImageMatchParams {
@@ -63,6 +64,10 @@ impl NodeRunner for ImageMatchRunner {
         ctx: &Context,
         param: Self::ParamType,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+        // sleep(Duration::from_secs(30)).await;
+
+        let start = Instant::now();
+
         let imread_mode = match param.imread_type.to_uppercase().as_str() {
             "GRAYSCALE" => imgcodecs::IMREAD_GRAYSCALE,
             "COLOR" => imgcodecs::IMREAD_COLOR,
@@ -86,12 +91,11 @@ impl NodeRunner for ImageMatchRunner {
             mat
         };
 
-        log::info!("resize ===> {}", param.resize);
-
-        let start = Instant::now();
-
         let mut source_mat = if param.use_screenshot {
-            action::screenshot::capture_to_mat(imread_mode).map_err(|e| e.to_string())?
+            let handle = tokio::task::spawn_blocking(move || {
+                action::screenshot::capture_to_mat(imread_mode).map_err(|e| e.to_string())
+            });
+            handle.await.map_err(|e| e.to_string())??
         } else {
             imgcodecs::imread(
                 files_folder
@@ -102,7 +106,7 @@ impl NodeRunner for ImageMatchRunner {
             )
             .map_err(|e| e.to_string())?
         };
-
+        
         let duration = start.elapsed();
         log::info!(
             "capture_screen took {:?}, path {}",
@@ -135,8 +139,6 @@ impl NodeRunner for ImageMatchRunner {
             &Mat::default(),
         )
         .map_err(|e| e.to_string())?;
-
-        log::info!("match score: {:.3}", max_val);
 
         let (x, y, score) = if max_val > 0.8 {
             let template_size = template_mat.size().map_err(|e| e.to_string())?;

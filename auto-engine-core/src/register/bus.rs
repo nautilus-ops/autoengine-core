@@ -12,10 +12,10 @@ use crate::types::node::{NodeDefine, NodeRunnerControl, NodeRunnerFactory};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct NodeRegisterBus {
-    nodes: HashMap<String, Arc<Box<dyn NodeDefine>>>,
-    runner_factories: HashMap<String, Arc<Box<dyn NodeRunnerFactory>>>,
+    nodes: HashMap<String, Arc<Box<dyn NodeDefine + Send + Sync>>>,
+    runner_factories: HashMap<String, Arc<Box<dyn NodeRunnerFactory + Send + Sync>>>,
 }
 
 impl NodeRegisterBus {
@@ -67,7 +67,7 @@ impl NodeRegisterBus {
         self.nodes.insert(key, Arc::new(node));
     }
 
-    pub fn list_nodes(&self) -> Vec<Arc<Box<dyn NodeDefine>>> {
+    pub fn list_nodes(&self) -> Vec<Arc<Box<dyn NodeDefine + Send + Sync>>> {
         let mut res = vec![];
         for (_key, value) in self.nodes.iter() {
             res.push(Arc::clone(value));
@@ -75,7 +75,7 @@ impl NodeRegisterBus {
         res
     }
 
-    pub fn load_node(&self, action_type: &str) -> Option<Arc<Box<dyn NodeDefine>>> {
+    pub fn load_node(&self, action_type: &str) -> Option<Arc<Box<dyn NodeDefine + Send + Sync>>> {
         Some(self.nodes.get(action_type)?.clone())
     }
 
