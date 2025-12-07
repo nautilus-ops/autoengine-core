@@ -8,6 +8,8 @@ use crate::node::mouse_move::node::MouseMoveNode;
 use crate::node::mouse_move::runner::MouseMoveNodeFactory;
 use crate::node::start::node::StartNode;
 use crate::node::start::runner::StartRunnerFactory;
+use crate::node::time_wait::node::TimeWaitNode;
+use crate::node::time_wait::runner::TimeWaitRunnerFactory;
 use crate::types::node::{NodeDefine, NodeRunnerControl, NodeRunnerFactory};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -46,6 +48,10 @@ impl NodeRegisterBus {
         self.register(
             Box::new(ImageMatchNode::new()),
             Box::new(ImageMatchRunnerFactory::new()),
+        );
+        self.register(
+            Box::new(TimeWaitNode::new()),
+            Box::new(TimeWaitRunnerFactory::new()),
         );
         self
     }

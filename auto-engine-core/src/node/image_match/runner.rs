@@ -6,8 +6,7 @@ use opencv::imgproc::TM_CCOEFF_NORMED;
 use opencv::{imgcodecs, imgproc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
-use tokio::time::sleep;
+use std::time::Instant;
 
 #[derive(Default, Serialize, Deserialize, Clone)]
 pub struct ImageMatchParams {
@@ -106,7 +105,7 @@ impl NodeRunner for ImageMatchRunner {
             )
             .map_err(|e| e.to_string())?
         };
-        
+
         let duration = start.elapsed();
         log::info!(
             "capture_screen took {:?}, path {}",

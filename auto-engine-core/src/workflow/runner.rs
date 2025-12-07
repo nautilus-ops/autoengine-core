@@ -140,226 +140,179 @@ impl WorkflowRunner {
             },
         )?;
 
-        let mut main_task = JoinSet::new();
+        handle_nod(self.graph.clone(), ctx, token, bus, emitter.clone()).await?;
 
-        process(
-            self.graph.clone(),
-            ctx,
-            token,
-            bus,
-            emitter.clone(),
-            &mut main_task,
-            "begin".to_string(),
-        );
-
-        tokio::task::spawn(async move {
-            let mut res: Result<(), String> = Ok(());
-            while let Some(r) = main_task.join_next().await {
-                match r {
-                    Ok(result) => {
-                        if let Err(e) = result {
-                            res = Err(e);
-                        }
-                    }
-                    Err(e) => {
-                        res = Err(e.to_string());
-                    }
-                }
-            }
-
-            emitter
-                .emit(
-                    WORKFLOW_EVENT,
-                    WorkflowEventPayload {
-                        status: WorkflowStatus::Finished,
-                    },
-                )
-                .unwrap_or_default();
-        });
+        log::info!("workflow finished");
+        emitter
+            .emit(
+                WORKFLOW_EVENT,
+                WorkflowEventPayload {
+                    status: WorkflowStatus::Finished,
+                },
+            )
+            .unwrap_or_default();
 
         Ok(())
     }
 }
 
-fn process(
+fn handle_nod(
     graph: Vec<Arc<std::sync::RwLock<GraphNode>>>,
     ctx: Arc<Context>,
     token: CancellationToken,
     bus: Arc<RwLock<NodeRegisterBus>>,
     emitter: Arc<NotificationEmitter>,
-    tasks: &mut JoinSet<Result<(), String>>,
-    parent: String,
-) {
-    log::info!("node {parent} has finished, next node {}", graph.len());
-    let token_clone = token.clone();
-    let emitter_clone = emitter.clone();
-    tasks.spawn(async move {
-        log::info!("===> next node {}", graph.len());
-        tokio::select! {
-            _ = token.cancelled() => {
-                log::info!("Pipeline terminated, exiting loop");
-                emitter.emit(NODE_EVENT, NodeEventPayload::cancel()).unwrap_or_default();
-                Ok(())
-            },
-            result = handle_node(graph,ctx,token_clone,bus,emitter_clone) => result
-        }
-    });
-}
+) -> Pin<Box<dyn Future<Output = Result<(), String>> + Send + 'static>> {
+    Box::pin(async move {
+        let mut tasks: JoinSet<Result<(), String>> = JoinSet::new();
+        for node in graph.iter() {
+            let token_clone = token.clone();
+            let token = token.clone();
+            let bus = bus.clone();
+            let ctx = ctx.clone();
+            let emitter_clone = emitter.clone();
+            let emitter = emitter.clone();
 
-async fn handle_node(
-    graph: Vec<Arc<std::sync::RwLock<GraphNode>>>,
-    ctx: Arc<Context>,
-    token: CancellationToken,
-    bus: Arc<RwLock<NodeRegisterBus>>,
-    emitter: Arc<NotificationEmitter>,
-) -> Result<(), String> {
-    let mut task = JoinSet::new();
-
-    for node in graph.iter() {
-        let bus_clone = bus.clone();
-
-        let node = node.clone();
-        let ctx_clone = ctx.clone();
-        let emitter_clone = emitter.clone();
-
-        let (node_id, action, node_context, next_nodes) = {
-            let node_reader = node.read().unwrap();
-            log::info!("handle node {}", node_reader.node_context.action_type);
-            (
-                node_reader.node_id.clone(),
-                node_reader.node_context.action_type.clone(),
-                node_reader.node_context.clone(),
-                node_reader.next.clone(),
-            )
-        };
-
-        let node_id_clone = node_id.clone();
-
-        let (node, mut runner) = {
-            let locked_bus = bus_clone.read().await;
-            let node = match locked_bus.load_node(&action) {
-                None => {
-                    return Err(format!("Can't find node : {}", action));
-                }
-                Some(node) => node,
+            let (node_id, node_schema, next_node) = {
+                let node_read = node.read().map_err(|e| e.to_string())?;
+                (
+                    node_read.node_id.clone(),
+                    node_read.node_context.clone(),
+                    node_read.next.clone(),
+                )
             };
-            let runner = match locked_bus.create_runner(&action) {
-                Some(runner) => runner,
-                None => {
-                    return Err(format!("Can't find action runner for node: {}", action));
-                }
+
+            let action = node_schema.action_type.clone();
+
+            let (node, mut runner) = {
+                let locked_bus = bus.read().await;
+                let node = match locked_bus.load_node(&action) {
+                    None => {
+                        return Err(format!("Can't find node : {}", action));
+                    }
+                    Some(node) => node,
+                };
+                let runner = match locked_bus.create_runner(&action) {
+                    Some(runner) => runner,
+                    None => {
+                        return Err(format!("Can't find action runner for node: {}", action));
+                    }
+                };
+                (node, runner)
             };
-            (node, runner)
-        };
+            let run_input = node_schema.input_data.clone().unwrap_or_default();
+            let retry = node_schema.metadata.retry.unwrap_or(0);
+            let delay = node_schema.metadata.duration.unwrap_or(0) as u64;
 
-        let handle = async move {
-            let emitter = emitter_clone;
-            emitter
-                .emit(NODE_EVENT, NodeEventPayload::running(node_id_clone.clone()))
-                .unwrap_or_default();
+            let handle = async move {
+                emitter
+                    .emit(NODE_EVENT, NodeEventPayload::running(node_id.clone()))
+                    .unwrap_or_default();
 
-            let retry = node_context.metadata.retry.unwrap_or(0);
-            let delay = node_context.metadata.duration.unwrap_or(0) as u64;
-            let node_name = node_context.metadata.name.clone();
-            let ctx = ctx_clone.clone();
-
-            if retry <= -1 {
-                // Infinite retry with a minimum interval between attempts.
-                let min_interval = Duration::from_millis(200);
-                let mut next_tick = Instant::now();
-                loop {
-                    let run_input = node_context.input_data.clone().unwrap_or_default();
-                    match runner
-                        .run(&ctx, &node_name, run_input, node.input_schema())
-                        .await
-                    {
-                        Ok(res) => {
-                            emitter
-                                .emit(
-                                    NODE_EVENT,
-                                    NodeEventPayload::success(node_id_clone.clone(), res.clone()),
-                                )
-                                .unwrap_or_default();
-                            break;
-                        }
-                        Err(_) => {
-                            next_tick += min_interval;
-                            let now = Instant::now();
-                            if next_tick > now {
-                                sleep_until(next_tick).await;
-                            } else {
-                                next_tick = now;
+                log::info!("handle run {}", action);
+                if retry <= -1 {
+                    // Infinite retry with a minimum interval between attempts.
+                    let min_interval = Duration::from_millis(200);
+                    let mut next_tick = Instant::now();
+                    loop {
+                        match runner
+                            .run(
+                                &ctx,
+                                &action,
+                                run_input.clone(),
+                                node.input_schema().clone(),
+                            )
+                            .await
+                        {
+                            Ok(res) => {
+                                emitter
+                                    .emit(
+                                        NODE_EVENT,
+                                        NodeEventPayload::success(node_id.clone(), res.clone()),
+                                    )
+                                    .unwrap_or_default();
+                                break;
                             }
-                        }
-                    };
-                }
-            } else {
-                let mut last_err = None;
-                // Total attempts = 1 (initial) + retry.
-                for attempt in 0..=retry {
-                    let run_input = node_context.input_data.clone().unwrap_or_default();
-                    match runner
-                        .run(&ctx, &node_name, run_input, node.input_schema())
-                        .await
-                    {
-                        Ok(res) => {
-                            emitter
-                                .emit(
-                                    NODE_EVENT,
-                                    NodeEventPayload::success(node_id_clone.clone(), res.clone()),
-                                )
-                                .unwrap_or_default();
-                            last_err = None;
-                            break;
-                        }
-                        Err(e) => {
-                            last_err = Some(e);
-                            if attempt < retry {
-                                tokio::time::sleep(Duration::from_millis(delay)).await;
+                            Err(_) => {
+                                next_tick += min_interval;
+                                let now = Instant::now();
+                                if next_tick > now {
+                                    sleep_until(next_tick).await;
+                                } else {
+                                    next_tick = now;
+                                }
+                            }
+                        };
+                    }
+                } else {
+                    let mut last_err = None;
+                    // Total attempts = 1 (initial) + retry.
+                    for attempt in 0..=retry {
+                        match runner
+                            .run(
+                                &ctx,
+                                &action,
+                                run_input.clone(),
+                                node.input_schema().clone(),
+                            )
+                            .await
+                        {
+                            Ok(res) => {
+                                emitter
+                                    .emit(
+                                        NODE_EVENT,
+                                        NodeEventPayload::success(node_id.clone(), res.clone()),
+                                    )
+                                    .unwrap_or_default();
+                                last_err = None;
+                                break;
+                            }
+                            Err(e) => {
+                                last_err = Some(e);
+                                if attempt < retry {
+                                    tokio::time::sleep(Duration::from_millis(delay)).await;
+                                }
                             }
                         }
                     }
-                }
 
-                if let Some(err) = last_err {
-                    emitter
-                        .emit(
-                            NODE_EVENT,
-                            NodeEventPayload::error::<String>(node_id_clone.clone(), None),
-                        )
-                        .unwrap_or_default();
-                    return Err(err);
+                    if let Some(err) = last_err {
+                        emitter
+                            .emit(
+                                NODE_EVENT,
+                                NodeEventPayload::error::<String>(node_id.clone(), None),
+                            )
+                            .unwrap_or_default();
+                        return Err(err);
+                    }
                 }
+                log::info!("handle finished {}", action);
+                handle_nod(next_node, ctx, token, bus, emitter).await
+            };
+
+            tasks.spawn(async move {
+                tokio::select! {
+                    _ = token_clone.cancelled() => {
+                        log::info!("Pipeline terminated, exiting loop");
+                        emitter_clone.emit(NODE_EVENT, NodeEventPayload::cancel()).unwrap_or_default();
+                        Ok(())
+                    },
+                    result = handle => result
+                }
+            });
+        }
+
+        while let Some(res) = tasks.join_next().await {
+            if let Err(e) = res {
+                return Err(e.to_string());
             }
-
-            Ok(())
-        };
-
-        handle.await?;
-
-        log::info!("node {} finished", node_context.action_type);
-
-        process(
-            next_nodes,
-            ctx.clone(),
-            token.clone(),
-            bus.clone(),
-            emitter.clone(),
-            &mut task,
-            node_context.action_type,
-        );
-    }
-
-    while let Some(res) = task.join_next().await {
-        if let Err(e) = res {
-            return Err(e.to_string());
+            if let Ok(result) = res && let Err(e) = result.clone() {
+                return Err(e.to_string());
+            }
         }
-        if let Ok(result) = res {
-            return result;
-        }
-    }
 
-    Ok(())
+        Ok(())
+    })
 }
 
 pub async fn handle_retry<F, Fut, R>(
