@@ -140,7 +140,7 @@ impl WorkflowRunner {
             },
         )?;
 
-        handle_nod(self.graph.clone(), ctx, token, bus, emitter.clone()).await?;
+        let result = handle_nod(self.graph.clone(), ctx, token, bus, emitter.clone()).await;
 
         log::info!("workflow finished");
         emitter
@@ -151,6 +151,11 @@ impl WorkflowRunner {
                 },
             )
             .unwrap_or_default();
+        emitter
+            .emit(NODE_EVENT, NodeEventPayload::cancel())
+            .unwrap_or_default();
+
+        result?;
 
         Ok(())
     }
@@ -306,7 +311,9 @@ fn handle_nod(
             if let Err(e) = res {
                 return Err(e.to_string());
             }
-            if let Ok(result) = res && let Err(e) = result.clone() {
+            if let Ok(result) = res
+                && let Err(e) = result.clone()
+            {
                 return Err(e.to_string());
             }
         }
