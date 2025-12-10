@@ -27,35 +27,6 @@ impl NodeDefine for MouseMoveNode {
         )
     }
 
-    fn output_schema(&self) -> Vec<SchemaField> {
-        Default::default()
-    }
-
-    fn input_schema(&self) -> Vec<SchemaField> {
-        vec![
-            SchemaField {
-                name: "x".to_owned(),
-                field_type: FieldType::Number,
-                description: Some(I18nValue {
-                    zh: "鼠标移动的横坐标".to_owned(),
-                    en: "Horizontal position of mouse move".to_owned(),
-                }),
-                enums: vec![],
-                default: None,
-            },
-            SchemaField {
-                name: "y".to_owned(),
-                field_type: FieldType::Number,
-                description: Some(I18nValue {
-                    zh: "鼠标移动的纵坐标".to_owned(),
-                    en: "Vertical position of mouse move".to_owned(),
-                }),
-                enums: vec![],
-                default: None,
-            },
-        ]
-    }
-
     fn category(&self) -> Option<I18nValue> {
         Some(I18nValue {
             zh: String::from("桌面自动化"),
@@ -70,5 +41,36 @@ impl NodeDefine for MouseMoveNode {
                 "Accepts x and y coordinates as parameters to simulate mouse movement.",
             ),
         })
+    }
+
+    fn output_schema(&self) -> Vec<SchemaField> {
+        Default::default()
+    }
+
+    fn input_schema(&self) -> Vec<SchemaField> {
+        vec![
+            SchemaField {
+                name: "x".to_owned(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "鼠标移动的横坐标".to_owned(),
+                    en: "Horizontal position of mouse move".to_owned(),
+                }),
+                enums: vec![],
+                default: None,
+            },
+            SchemaField {
+                name: "y".to_owned(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "鼠标移动的纵坐标".to_owned(),
+                    en: "Vertical position of mouse move".to_owned(),
+                }),
+                enums: vec![],
+                default: None,
+            },
+        ]
     }
 }

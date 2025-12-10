@@ -1,3 +1,4 @@
+use crate::types::node::NodeRunnerControl;
 use std::pin::Pin;
 use std::time::Duration;
 use std::{
@@ -95,6 +96,15 @@ impl WorkflowRunner {
         }
 
         for edge in workflow.connections.into_iter() {
+            for start in start_nodes.iter() {
+                if start == &edge.to {
+                    return Err(
+                        "The [Start] node cannot be used as the next node in the connection."
+                            .to_string(),
+                    );
+                }
+            }
+
             if !graph_nodes.contains_key(&edge.from) {
                 return Err(format!(
                     "connection references missing node '{}'",
@@ -132,7 +142,7 @@ impl WorkflowRunner {
         token: CancellationToken,
         bus: Arc<RwLock<NodeRegisterBus>>,
         emitter: Arc<NotificationEmitter>,
-    ) -> Result<(), String> {
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         emitter.clone().emit(
             WORKFLOW_EVENT,
             WorkflowEventPayload {
@@ -155,9 +165,9 @@ impl WorkflowRunner {
             .emit(NODE_EVENT, NodeEventPayload::cancel())
             .unwrap_or_default();
 
-        result?;
+        log::info!("workflow finished, the result: {:?}", result);
 
-        Ok(())
+        result
     }
 }
 
@@ -167,9 +177,16 @@ fn handle_nod(
     token: CancellationToken,
     bus: Arc<RwLock<NodeRegisterBus>>,
     emitter: Arc<NotificationEmitter>,
-) -> Pin<Box<dyn Future<Output = Result<(), String>> + Send + 'static>> {
+) -> Pin<
+    Box<
+        dyn Future<Output = Result<Option<HashMap<String, serde_json::Value>>, String>>
+            + Send
+            + 'static,
+    >,
+> {
     Box::pin(async move {
-        let mut tasks: JoinSet<Result<(), String>> = JoinSet::new();
+        let mut tasks: JoinSet<Result<Option<HashMap<String, serde_json::Value>>, String>> =
+            JoinSet::new();
         for node in graph.iter() {
             let token_clone = token.clone();
             let token = token.clone();
@@ -215,6 +232,9 @@ fn handle_nod(
                     .unwrap_or_default();
 
                 log::info!("handle run {}", action);
+
+                let mut result: Result<Option<HashMap<String, serde_json::Value>>, String> =
+                    Ok(None);
                 if retry <= -1 {
                     // Infinite retry with a minimum interval between attempts.
                     let min_interval = Duration::from_millis(200);
@@ -236,6 +256,7 @@ fn handle_nod(
                                         NodeEventPayload::success(node_id.clone(), res.clone()),
                                     )
                                     .unwrap_or_default();
+                                result = Ok(res);
                                 break;
                             }
                             Err(_) => {
@@ -270,6 +291,7 @@ fn handle_nod(
                                     )
                                     .unwrap_or_default();
                                 last_err = None;
+                                result = Ok(res);
                                 break;
                             }
                             Err(e) => {
@@ -292,6 +314,9 @@ fn handle_nod(
                     }
                 }
                 log::info!("handle finished {}", action);
+                if next_node.is_empty() {
+                    return result;
+                }
                 handle_nod(next_node, ctx, token, bus, emitter).await
             };
 
@@ -300,25 +325,25 @@ fn handle_nod(
                     _ = token_clone.cancelled() => {
                         log::info!("Pipeline terminated, exiting loop");
                         emitter_clone.emit(NODE_EVENT, NodeEventPayload::cancel()).unwrap_or_default();
-                        Ok(())
+                        Ok(None)
                     },
                     result = handle => result
                 }
             });
         }
 
+        let mut final_result = Ok(None);
+
         while let Some(res) = tasks.join_next().await {
             if let Err(e) = res {
                 return Err(e.to_string());
             }
-            if let Ok(result) = res
-                && let Err(e) = result.clone()
-            {
-                return Err(e.to_string());
+            if let Ok(result) = res {
+                final_result = result;
             }
         }
 
-        Ok(())
+        final_result
     })
 }
 

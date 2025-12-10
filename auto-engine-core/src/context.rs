@@ -1,3 +1,4 @@
+use crate::utils;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -52,6 +53,31 @@ impl Context {
             serde_json::to_value(value).map_err(|e| format!("{:?}", e))?,
         );
         Ok(())
+    }
+    pub async fn get_value(&self, key: &str) -> Option<serde_json::Value> {
+        let map = self.string_value.read().await;
+        map.get(key).cloned()
+    }
+
+    pub async fn get_value_parse(&self, key: &str) -> Option<serde_json::Value> {
+        let mut default_value = None;
+        let mut key = key.to_string();
+        for caps in utils::REGEX_PARSE_VARIABLES.captures_iter(&key) {
+            let var_name = (&caps[1]).to_string();
+            let default = caps.get(2).map(|m| m.as_str()).unwrap_or("");
+            if default != "" {
+                default_value = Some(serde_json::Value::String(default.to_string()));
+            }
+            key = var_name;
+            break;
+        }
+
+        let value = self.get_value(&key).await;
+        if value.is_some() {
+            return value;
+        }
+
+        default_value
     }
 
     pub fn load_image_path(&self, image: &str) -> Result<PathBuf, String> {

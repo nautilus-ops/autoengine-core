@@ -49,6 +49,7 @@ impl NodeDefine for TimeWaitNode {
         vec![SchemaField {
             name: "duration".to_string(),
             field_type: FieldType::Number,
+            item_type: None,
             description: Some(I18nValue {
                 zh: "需要等待的时间".to_string(),
                 en: "The time required to wait".to_string(),

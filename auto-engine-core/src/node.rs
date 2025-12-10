@@ -1,3 +1,4 @@
+pub mod data_aggregator;
 pub mod image_match;
 pub mod keyboard;
 pub mod mouse_click;
