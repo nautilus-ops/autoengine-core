@@ -1,4 +1,7 @@
 use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
+use std::collections::HashMap;
+
+pub const NODE_TYPE: &str = "DataAggregator";
 
 #[derive(Default)]
 pub struct DataAggregatorNode;
@@ -11,7 +14,7 @@ impl DataAggregatorNode {
 
 impl NodeDefine for DataAggregatorNode {
     fn action_type(&self) -> String {
-        String::from("DataAggregator")
+        NODE_TYPE.to_string()
     }
 
     fn name(&self) -> I18nValue {
@@ -87,7 +90,8 @@ impl NodeDefine for DataAggregatorNode {
                 item_type: Some(FieldType::String),
                 description: Some(I18nValue {
                     zh: "数据源路径列表，例如：ctx.node1.value, ctx.node2.result".to_string(),
-                    en: "List of data source paths, e.g.: ctx.node1.value, ctx.node2.result".to_string(),
+                    en: "List of data source paths, e.g.: ctx.node1.value, ctx.node2.result"
+                        .to_string(),
                 }),
                 enums: vec![],
                 default: None,

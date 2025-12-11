@@ -1,3 +1,4 @@
+use wasmtime::Enabled::No;
 use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
@@ -52,6 +53,36 @@ impl NodeDefine for ImageMatchNode {
             }),
             enums: vec![],
             default: Some("0.8".to_string()),
+        },SchemaField {
+            name: "cost_time".to_string(),
+            field_type: FieldType::Number,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "图像匹配过程消耗的时间".to_string(),
+                en: "Time consumed by the image matching process".to_string(),
+            }),
+            enums: vec![],
+            default: Some("0.8".to_string()),
+        },SchemaField {
+            name: "x".to_string(),
+            field_type: FieldType::Number,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "匹配图像的x轴坐标".to_string(),
+                en: "X-axis coordinate of the matched image".to_string(),
+            }),
+            enums: vec![],
+            default: None,
+        },SchemaField {
+            name: "y".to_string(),
+            field_type: FieldType::Number,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "匹配图像的y轴坐标".to_string(),
+                en: "Y-axis coordinate of the matched image".to_string(),
+            }),
+            enums: vec![],
+            default: None,
         }]
     }
 

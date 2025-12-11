@@ -2,13 +2,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::schema::node::NodeSchema;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct WorkflowSchema {
     pub nodes: Vec<NodeSchema>,
     pub connections: Vec<Connection>,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct Connection {
     pub from: String,
     pub to: String,
