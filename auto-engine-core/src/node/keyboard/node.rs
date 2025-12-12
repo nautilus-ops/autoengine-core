@@ -50,6 +50,7 @@ impl NodeDefine for KeyboardNode {
             SchemaField {
                 name: "mode".to_owned(),
                 field_type: FieldType::String,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "键盘操作模式，支持点击、按下、抬起或文本输入".to_owned(),
                     en: "Keyboard mode: click, press, release, or type text".to_owned(),
@@ -65,6 +66,7 @@ impl NodeDefine for KeyboardNode {
             SchemaField {
                 name: "key".to_owned(),
                 field_type: FieldType::String,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "键盘按键，示例：A、Enter、F1、Control 等".to_owned(),
                     en: "Keyboard key, e.g. A, Enter, F1, Control".to_owned(),
@@ -75,6 +77,7 @@ impl NodeDefine for KeyboardNode {
             SchemaField {
                 name: "value".to_owned(),
                 field_type: FieldType::String,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "文本输入内容，仅在 Type 模式下使用".to_owned(),
                     en: "Text to input when mode is Type".to_owned(),

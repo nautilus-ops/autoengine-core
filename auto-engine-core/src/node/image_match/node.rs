@@ -1,3 +1,4 @@
+use wasmtime::Enabled::No;
 use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
@@ -45,12 +46,43 @@ impl NodeDefine for ImageMatchNode {
         vec![SchemaField {
             name: "score".to_string(),
             field_type: FieldType::Number,
+            item_type: None,
             description: Some(I18nValue {
                 zh: "匹配结果分值，最小为0，最大为1".to_string(),
                 en: "Matching final score, minimum 0, maximum 1".to_string(),
             }),
             enums: vec![],
             default: Some("0.8".to_string()),
+        },SchemaField {
+            name: "cost_time".to_string(),
+            field_type: FieldType::Number,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "图像匹配过程消耗的时间".to_string(),
+                en: "Time consumed by the image matching process".to_string(),
+            }),
+            enums: vec![],
+            default: Some("0.8".to_string()),
+        },SchemaField {
+            name: "x".to_string(),
+            field_type: FieldType::Number,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "匹配图像的x轴坐标".to_string(),
+                en: "X-axis coordinate of the matched image".to_string(),
+            }),
+            enums: vec![],
+            default: None,
+        },SchemaField {
+            name: "y".to_string(),
+            field_type: FieldType::Number,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "匹配图像的y轴坐标".to_string(),
+                en: "Y-axis coordinate of the matched image".to_string(),
+            }),
+            enums: vec![],
+            default: None,
         }]
     }
 
@@ -59,6 +91,7 @@ impl NodeDefine for ImageMatchNode {
             SchemaField {
                 name: "target_score".to_string(),
                 field_type: FieldType::Number,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "目标匹配分值，最小为0，最大为1".to_string(),
                     en: "Target matching score, minimum 0, maximum 1".to_string(),
@@ -69,6 +102,7 @@ impl NodeDefine for ImageMatchNode {
             SchemaField {
                 name: "imread_type".to_string(),
                 field_type: FieldType::String,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "图像读取方式".to_string(),
                     en: "Image read mode".to_string(),
@@ -79,6 +113,7 @@ impl NodeDefine for ImageMatchNode {
             SchemaField {
                 name: "use_screenshot".to_string(),
                 field_type: FieldType::Boolean,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "是否使用桌面截图作为源图片？".to_string(),
                     en: "Should desktop screenshots be used as source images?".to_string(),
@@ -89,6 +124,7 @@ impl NodeDefine for ImageMatchNode {
             SchemaField {
                 name: "resize".to_string(),
                 field_type: FieldType::Number,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "图片大小倍率，倍率越小匹配速度越快，精度越低".to_string(),
                     en: "Image scaling factor: The smaller the scaling factor, the faster the matching speed but the lower the accuracy.".to_string(),
@@ -99,6 +135,7 @@ impl NodeDefine for ImageMatchNode {
             SchemaField {
                 name: "template_image".to_string(),
                 field_type: FieldType::File,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "图像模板".to_string(),
                     en: "Image template".to_string(),
@@ -109,6 +146,7 @@ impl NodeDefine for ImageMatchNode {
             SchemaField {
                 name: "source_image".to_string(),
                 field_type: FieldType::File,
+                item_type: None,
                 description: Some(I18nValue {
                     zh: "原始图像".to_string(),
                     en: "Source image".to_string(),

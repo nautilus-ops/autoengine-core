@@ -1,4 +1,6 @@
+use crate::types::node::NodeRunnerControl;
 use std::pin::Pin;
+use std::sync::atomic::AtomicUsize;
 use std::time::Duration;
 use std::{
     collections::{HashMap, HashSet},
@@ -22,6 +24,7 @@ struct GraphNode {
     pub node_id: String,
     pub node_context: NodeSchema,
     pub next: Vec<Arc<std::sync::RwLock<GraphNode>>>,
+    pub wait_count: Arc<AtomicUsize>,
 }
 
 fn build_graph(
@@ -51,6 +54,13 @@ fn build_graph(
             .get(next_node_id)
             .ok_or_else(|| format!("connection references missing node '{next_node_id}'"))?
             .clone();
+
+        {
+            let node_writer = rc_node.write().map_err(|e| e.to_string())?;
+            node_writer
+                .wait_count
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }
 
         build_graph(next_node_id, graph_nodes, edges, visited, visiting)?;
 
@@ -90,11 +100,21 @@ impl WorkflowRunner {
                     node_id: key,
                     node_context,
                     next: vec![],
+                    wait_count: Arc::new(AtomicUsize::new(0)),
                 })),
             );
         }
 
         for edge in workflow.connections.into_iter() {
+            for start in start_nodes.iter() {
+                if start == &edge.to {
+                    return Err(
+                        "The [Start] node cannot be used as the next node in the connection."
+                            .to_string(),
+                    );
+                }
+            }
+
             if !graph_nodes.contains_key(&edge.from) {
                 return Err(format!(
                     "connection references missing node '{}'",
@@ -132,7 +152,7 @@ impl WorkflowRunner {
         token: CancellationToken,
         bus: Arc<RwLock<NodeRegisterBus>>,
         emitter: Arc<NotificationEmitter>,
-    ) -> Result<(), String> {
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         emitter.clone().emit(
             WORKFLOW_EVENT,
             WorkflowEventPayload {
@@ -155,9 +175,9 @@ impl WorkflowRunner {
             .emit(NODE_EVENT, NodeEventPayload::cancel())
             .unwrap_or_default();
 
-        result?;
+        log::info!("workflow finished, the result: {:?}", result);
 
-        Ok(())
+        result
     }
 }
 
@@ -167,9 +187,16 @@ fn handle_nod(
     token: CancellationToken,
     bus: Arc<RwLock<NodeRegisterBus>>,
     emitter: Arc<NotificationEmitter>,
-) -> Pin<Box<dyn Future<Output = Result<(), String>> + Send + 'static>> {
+) -> Pin<
+    Box<
+        dyn Future<Output = Result<Option<HashMap<String, serde_json::Value>>, String>>
+            + Send
+            + 'static,
+    >,
+> {
     Box::pin(async move {
-        let mut tasks: JoinSet<Result<(), String>> = JoinSet::new();
+        let mut tasks: JoinSet<Result<Option<HashMap<String, serde_json::Value>>, String>> =
+            JoinSet::new();
         for node in graph.iter() {
             let token_clone = token.clone();
             let token = token.clone();
@@ -178,12 +205,13 @@ fn handle_nod(
             let emitter_clone = emitter.clone();
             let emitter = emitter.clone();
 
-            let (node_id, node_schema, next_node) = {
+            let (node_id, node_schema, next_node, wait_count) = {
                 let node_read = node.read().map_err(|e| e.to_string())?;
                 (
                     node_read.node_id.clone(),
                     node_read.node_context.clone(),
                     node_read.next.clone(),
+                    node_read.wait_count.clone(),
                 )
             };
 
@@ -207,6 +235,7 @@ fn handle_nod(
             };
             let run_input = node_schema.input_data.clone().unwrap_or_default();
             let retry = node_schema.metadata.retry.unwrap_or(0);
+            let node_name = node_schema.metadata.name;
             let delay = node_schema.metadata.duration.unwrap_or(0) as u64;
 
             let handle = async move {
@@ -214,7 +243,19 @@ fn handle_nod(
                     .emit(NODE_EVENT, NodeEventPayload::running(node_id.clone()))
                     .unwrap_or_default();
 
-                log::info!("handle run {}", action);
+                log::info!("wait_count {} {}", action, wait_count.load(std::sync::atomic::Ordering::SeqCst));
+
+                if wait_count.load(std::sync::atomic::Ordering::SeqCst) > 1 {
+                    wait_count.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+                    log::info!("waiting for {}", wait_count.load(std::sync::atomic::Ordering::SeqCst));
+                    emitter
+                        .emit(NODE_EVENT, NodeEventPayload::waiting(node_id.clone()))
+                        .unwrap_or_default();
+                    return Ok(None);
+                }
+
+                let mut result: Result<Option<HashMap<String, serde_json::Value>>, String> =
+                    Ok(None);
                 if retry <= -1 {
                     // Infinite retry with a minimum interval between attempts.
                     let min_interval = Duration::from_millis(200);
@@ -223,7 +264,7 @@ fn handle_nod(
                         match runner
                             .run(
                                 &ctx,
-                                &action,
+                                &node_name,
                                 run_input.clone(),
                                 node.input_schema().clone(),
                             )
@@ -236,6 +277,7 @@ fn handle_nod(
                                         NodeEventPayload::success(node_id.clone(), res.clone()),
                                     )
                                     .unwrap_or_default();
+                                result = Ok(res);
                                 break;
                             }
                             Err(_) => {
@@ -256,7 +298,7 @@ fn handle_nod(
                         match runner
                             .run(
                                 &ctx,
-                                &action,
+                                &node_name,
                                 run_input.clone(),
                                 node.input_schema().clone(),
                             )
@@ -270,6 +312,7 @@ fn handle_nod(
                                     )
                                     .unwrap_or_default();
                                 last_err = None;
+                                result = Ok(res);
                                 break;
                             }
                             Err(e) => {
@@ -292,6 +335,9 @@ fn handle_nod(
                     }
                 }
                 log::info!("handle finished {}", action);
+                if next_node.is_empty() {
+                    return result;
+                }
                 handle_nod(next_node, ctx, token, bus, emitter).await
             };
 
@@ -300,25 +346,25 @@ fn handle_nod(
                     _ = token_clone.cancelled() => {
                         log::info!("Pipeline terminated, exiting loop");
                         emitter_clone.emit(NODE_EVENT, NodeEventPayload::cancel()).unwrap_or_default();
-                        Ok(())
+                        Ok(None)
                     },
                     result = handle => result
                 }
             });
         }
 
+        let mut final_result = Ok(None);
+
         while let Some(res) = tasks.join_next().await {
             if let Err(e) = res {
                 return Err(e.to_string());
             }
-            if let Ok(result) = res
-                && let Err(e) = result.clone()
-            {
-                return Err(e.to_string());
+            if let Ok(result) = res {
+                final_result = result;
             }
         }
 
-        Ok(())
+        final_result
     })
 }
 

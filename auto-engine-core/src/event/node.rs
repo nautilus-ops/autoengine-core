@@ -26,6 +26,9 @@ impl NodeEventPayload {
     pub fn running(name: String) -> NodeEventPayload {
         NodeEventPayload::new::<String>("running".to_string(), name, None)
     }
+    pub fn waiting(name: String) -> NodeEventPayload {
+        NodeEventPayload::new::<String>("waiting".to_string(), name, None)
+    }
 
     pub fn skip<D: Serialize>(name: String, result: Option<D>) -> NodeEventPayload {
         NodeEventPayload::new("skip".to_string(), name, result)

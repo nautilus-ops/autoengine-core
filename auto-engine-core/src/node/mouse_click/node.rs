@@ -49,6 +49,7 @@ impl NodeDefine for MouseClickNode {
         vec![SchemaField {
             name: "value".to_owned(),
             field_type: FieldType::String,
+            item_type: None,
             description: Some(I18nValue {
                 zh: "鼠标点击值，示例：left/right".to_owned(),
                 en: "Mouse click value, e.g. left/right".to_owned(),

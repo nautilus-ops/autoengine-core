@@ -158,14 +158,11 @@ impl NodeRunner for ImageMatchRunner {
         };
 
         let mut res = HashMap::new();
+        res.insert("score".to_string(), serde_json::json!(score));
+        res.insert("x".to_string(), serde_json::json!(x));
+        res.insert("y".to_string(), serde_json::json!(y));
         res.insert(
-            format!("{}.score", param.template_image),
-            serde_json::json!(score),
-        );
-        res.insert(format!("{}.x", param.template_image), serde_json::json!(x));
-        res.insert(format!("{}.y", param.template_image), serde_json::json!(y));
-        res.insert(
-            format!("{}.cost_time", param.template_image),
+            "cost_time".to_string(),
             serde_json::json!(duration.as_secs_f32()),
         );
 

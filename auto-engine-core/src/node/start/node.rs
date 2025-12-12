@@ -26,18 +26,10 @@ impl NodeDefine for StartNode {
         )
     }
 
-    fn output_schema(&self) -> Vec<SchemaField> {
-        Default::default()
-    }
-
-    fn input_schema(&self) -> Vec<SchemaField> {
-        Default::default()
-    }
-
     fn category(&self) -> Option<I18nValue> {
         Some(I18nValue {
             zh: String::from("基础节点"),
-            en: String::from("Base node"),
+            en: String::from("Basic Node"),
         })
     }
 
@@ -46,5 +38,13 @@ impl NodeDefine for StartNode {
             zh: String::from("工作流从此节点开始执行"),
             en: String::from("The workflow start at this node."),
         })
+    }
+
+    fn output_schema(&self) -> Vec<SchemaField> {
+        Default::default()
+    }
+
+    fn input_schema(&self) -> Vec<SchemaField> {
+        Default::default()
     }
 }

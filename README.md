@@ -1,27 +1,25 @@
 # AutoEngine Core
 
-AutoEngine Core is an asynchronous Rust engine for driving desktop automation pipelines. It executes YAML workflows that combine image recognition, mouse/keyboard control, conditional logic, and optional Tauri event emission. The crate can be embedded in a GUI application or run headlessly, making it a flexible foundation for custom automation tools.
+AutoEngine Core is an asynchronous Rust engine centered on workflow orchestration: it describes automation steps with workflow graphs, schedules node capabilities (image recognition, mouse/keyboard, timed waits, WASM plugins, etc.) and condition controls, and emits events to upper-layer UIs when needed. You can embed it in a GUI or run it headless to build automation assistants or script conversion tools.
 
-## Highlights
-- Stage-based pipelines expressed in YAML with `Start`, `ImageRecognition`, `MouseMove`, `MouseClick`, `KeyBoard`, and `TimeWait` nodes.
-- Built-in context store with `${var:default}` interpolation so later actions can reuse data captured by previous stages.
-- OpenCV-powered template matching with configurable resize/imread options plus on-demand screen captures via the `screenshots` crate.
-- Mouse and keyboard automation through Enigo, including press/hold, clicks, and text input with retry/backoff controls.
-- Optional Tauri integration that emits per-node events (running, skip, done, error, cancel) for UI feedback.
-- Tokio-based executor with cancellation tokens, rate limiting, and looped execution for long-running bots.
+## Highlights (Orchestration Focus)
+- **DAG orchestration**: A workflow consists of a node list and connections. The entry node is usually `Start`; built-in action nodes cover image recognition, mouse move/click, keyboard input, timed waits, and pluggable WASM nodes. Custom capabilities are supported.
+- **Context-driven data flow**: The built-in `Context` supports `${var:default}` interpolation. Node outputs are automatically written so later nodes can reuse coordinates, state, or custom fields with zero boilerplate.
+- **Runtime controls**: `WorkflowRunner` offers async execution, retries/intervals, looping, minimum timeslice constraints, and cancellation tokens for long-running automation tasks.
+- **Observable events**: The optional `tauri` feature emits node-level events (running/skip/done/error/cancel) so UIs can visualize progress and results.
+- **Pluggable capabilities**: Image matching is backed by OpenCV and I/O actions use Enigo, but both are injected as “node capabilities” so the orchestration layer stays simple and replaceable.
 
 ## How It Works
-1. **Pipeline definition** – Pipelines are lists of stages; each stage contains one or more nodes (actions). Pipelines normally live next to their supporting assets (for example, under `pipeline/image/*.png` for template matching).
-2. **Context & variables** – Each node can write to the shared `Context`, and later nodes reference those values using `${stage.image.png.x}` style placeholders or default fallbacks (`${value:0}`).
-3. **Conditions** – Nodes may specify `exist`, `not_exist`, or boolean expressions (`condition: "${foo} > 10"`) that gate execution.
-4. **Runner** – `PipelineRunner` spins up asynchronous tasks, handles retries, enforces minimum loop intervals, and supports cancellation via `tokio_util::sync::CancellationToken`.
-5. **Events** – When compiled with the `tauri` feature the engine emits structured node events so host applications can visualize progress.
+1. **Workflow definition**: The workflow is a DAG. `nodes` describe actions and metadata (name, retries, intervals, conditions, etc.), and `connections` link `from` to `to`. Resource files are best stored next to the workflow in `files/` (for example `workflow/files/*.png`).
+2. **Context and variables**: Nodes write detection results or computed values into `Context`, later read as `${detect-dot.dot.png.x}`. Defaults are supported via `${value:0}`.
+3. **Conditions and branching**: Nodes support existence/non-existence checks and expressions (`condition: "${foo} > 10"`), enabling branching and short-circuiting without extra scripts.
+4. **Runner**: `WorkflowRunner` handles async scheduling, retries, throttling, cancellation, and looped execution; enable tauri event output when UI feedback is required.
 
 ## Getting Started
 Prerequisites:
 - Rust 1.80+ (edition 2024 workspace).
-- A working OpenCV toolchain (the [`opencv` crate](https://docs.rs/opencv) expects the native libraries to be installed, e.g., `brew install opencv` on macOS or `apt install libopencv-dev` on Debian/Ubuntu).
-- (Optional) Tauri 2.x if you plan to embed the crate in a Tauri application.
+- OpenCV runtime (the [`opencv` crate](https://docs.rs/opencv) needs system libraries such as `brew install opencv` or `apt install libopencv-dev`).
+- Optional: Tauri 2.x when you need event emission or main-thread keyboard handling.
 
 Build and test the workspace:
 
@@ -30,59 +28,27 @@ cargo build -p auto-engine-core
 cargo test -p auto-engine-core
 ```
 
-### Example Pipeline
-```yaml
-- stage:
-    - action_type: Start
-      name: "main"
-      conditions: ""
-- stage:
-    - action_type: ImageRecognition
-      name: "find-dot"
-      retry: -1
-      interval: 0
-      params:
-        images:
-          - "dot.png"
-        sub_pipeline: ""
-- stage:
-    - action_type: MouseMove
-      name: "Move cursor to dot"
-      retry: 2
-      params:
-        x: "${find-dot.dot.png.x}"
-        y: "${find-dot.dot.png.y}"
-      conditions:
-        exist: "find-dot.dot.png"
-```
-
-Key ideas demonstrated above:
-- Image recognition nodes can look for multiple templates; their results (coordinates, scores) are stored automatically in the context.
-- Mouse/keyboard nodes can reference those coordinates through `${...}` expressions and gate execution using conditions.
-- `retry` and `interval` allow each action to handle flaky inputs without bringing down the entire pipeline.
-
 ### Feature Flags
-The crate exposes several opt-in modules. By default all of them are enabled:
+Workflow orchestration is core; the following feature flags trim capabilities (all enabled by default):
 
 | Feature    | Description |
 |------------|-------------|
-| `types`    | Data structures for nodes, stages, and pipelines. |
-| `context`  | Shared context store and helpers. |
-| `event`    | Node event payloads. |
-| `pipeline` | Pipeline runner orchestration. |
-| `runner`   | Mouse, keyboard, and image recognition executors. |
-| `utils`    | Variable parsing utilities and helpers. |
-| `tauri`    | Enables Tauri-specific integrations such as main-thread keyboard handling and event emission. |
+| `types`    | Workflow/node data structures. |
+| `context`  | Shared context and variable resolution. |
+| `event`    | Node event definitions. |
+| `runner`   | Node capability executors (mouse, keyboard, image recognition, etc.). |
+| `utils`    | Helper utilities such as variable parsing. |
+| `tauri`    | Main-thread keyboard handling and event emission. |
 
-Disable features in `Cargo.toml` as needed, e.g. `default-features = false` for a minimal build.
+Disable features in `Cargo.toml` as needed, e.g. set `default-features = false` for a minimal build.
 
 ## Contributing
 1. Ensure `cargo fmt` and `cargo clippy` pass locally.
 2. Add tests (`cargo test`) whenever you introduce new node types, conditions, or utilities.
-3. Document new pipeline actions or DSL additions in this README.
+3. Document new workflow actions or DSL additions in this README.
 
-## Miantainer
-This project is miantained by CeerDecy(Yuan Haonan), email: ceerdecy@gmail.com
+## Maintainer
+This project is maintained by CeerDecy (Yuan Haonan), email: ceerdecy@gmail.com.
 
 ## License
 This project is licensed under the [Apache License 2.0](LICENSE).

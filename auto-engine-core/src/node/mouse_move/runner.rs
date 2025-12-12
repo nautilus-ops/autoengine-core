@@ -10,6 +10,7 @@ use crate::{context::Context, types::node::NodeRunner};
 pub struct MouseMoveParams {
     pub x: i32,
     pub y: i32,
+    pub hidpi: String,
 }
 
 #[derive(Clone)]
@@ -37,11 +38,16 @@ impl NodeRunner for MouseMoveRunner {
         ctx: &Context,
         params: Self::ParamType,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+        let rate: f64 = match params.hidpi.as_str()  {
+            "100%" => {1.0}
+            "200%" => {2.0}
+            "400%" => {4.0}
+            _ => {1.0}
+        };
+
         let x: i32 = params.x;
 
         let y: i32 = params.y;
-
-        let rate = ctx.screen_scale;
 
         let mut enigo = self
             .enigo

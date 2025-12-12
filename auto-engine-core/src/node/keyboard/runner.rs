@@ -98,6 +98,7 @@ impl NodeRunner for KeyboardNodeRunner {
                     .ok_or_else(|| "mode Type requires `value`".to_string())?;
 
                 self.with_enigo(ctx, move |enigo| {
+                    log::info!("will input {value}");
                     enigo
                         .text(&value)
                         .map_err(|err| format!("Failed to type text: {err}"))

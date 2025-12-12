@@ -1,3 +1,5 @@
+use crate::node::data_aggregator::node::DataAggregatorNode;
+use crate::node::data_aggregator::runner::DataAggregatorRunnerFactory;
 use crate::node::image_match::node::ImageMatchNode;
 use crate::node::image_match::runner::ImageMatchRunnerFactory;
 use crate::node::keyboard::node::KeyboardNode;
@@ -52,6 +54,10 @@ impl NodeRegisterBus {
         self.register(
             Box::new(TimeWaitNode::new()),
             Box::new(TimeWaitRunnerFactory::new()),
+        );
+        self.register(
+            Box::new(DataAggregatorNode::new()),
+            Box::new(DataAggregatorRunnerFactory::new()),
         );
         self
     }

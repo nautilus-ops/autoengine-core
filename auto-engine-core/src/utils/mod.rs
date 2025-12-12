@@ -2,7 +2,7 @@ use crate::context::Context;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-static REGEX_PARSE_VARIABLES: Lazy<Regex> =
+pub static REGEX_PARSE_VARIABLES: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\$\{([^}:]+(?:\.[^}:]+)*)(?::([^}]*))?}").unwrap());
 
 // String: the value name or key

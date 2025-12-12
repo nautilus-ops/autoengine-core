@@ -29,6 +29,8 @@ pub struct SchemaField {
     #[serde(rename = "type")]
     pub field_type: FieldType,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub item_type: Option<FieldType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<I18nValue>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enums: Vec<String>,
@@ -167,6 +169,7 @@ where
 
         if let Some(result) = self.runner.run(ctx, params).await? {
             for (name, value) in result.iter() {
+                log::info!("set value {}",format!("ctx.{}.{}", node_name, name).as_str());
                 ctx.set_value(format!("ctx.{}.{}", node_name, name).as_str(), value)
                     .await?;
             }
