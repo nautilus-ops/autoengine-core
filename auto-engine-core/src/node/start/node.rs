@@ -1,4 +1,5 @@
-use crate::types::node::{I18nValue, NodeDefine, SchemaField};
+use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
+use std::collections::HashMap;
 
 pub struct StartNode;
 
@@ -40,11 +41,37 @@ impl NodeDefine for StartNode {
         })
     }
 
-    fn output_schema(&self) -> Vec<SchemaField> {
-        Default::default()
+    fn output_schema(&self, input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
+        let val = input.get("params").unwrap_or_default().clone();
+        let params: HashMap<String, serde_json::Value> =
+            serde_json::from_value(val).unwrap_or_default();
+
+        let mut outputs = vec![];
+        for (key, _value) in params.iter() {
+            outputs.push(SchemaField {
+                name: key.to_string(),
+                field_type: Default::default(),
+                item_type: None,
+                description: None,
+                enums: vec![],
+                default: None,
+            });
+        }
+
+        outputs
     }
 
     fn input_schema(&self) -> Vec<SchemaField> {
-        Default::default()
+        vec![SchemaField {
+            name: "params".to_string(),
+            field_type: FieldType::Object,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "".to_string(),
+                en: "".to_string(),
+            }),
+            enums: vec![],
+            default: None,
+        }]
     }
 }

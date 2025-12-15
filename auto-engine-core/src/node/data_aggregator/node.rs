@@ -44,7 +44,7 @@ impl NodeDefine for DataAggregatorNode {
         })
     }
 
-    fn output_schema(&self) -> Vec<SchemaField> {
+    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
         vec![
             SchemaField {
                 name: "result".to_string(),

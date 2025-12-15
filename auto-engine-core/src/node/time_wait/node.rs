@@ -1,4 +1,5 @@
 use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct TimeWaitNode;
@@ -41,7 +42,7 @@ impl NodeDefine for TimeWaitNode {
         })
     }
 
-    fn output_schema(&self) -> Vec<SchemaField> {
+    fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
         vec![]
     }
 

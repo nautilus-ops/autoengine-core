@@ -1,4 +1,4 @@
-use crate::types::node::{NodeRunnerControl, NodeRunnerController};
+use crate::types::node::{NodeRunnerControl, NodeRunnerController, SchemaField};
 use crate::{
     context::Context,
     types::node::{NodeRunner, NodeRunnerFactory},
@@ -18,16 +18,24 @@ impl StartRunner {
 
 #[async_trait::async_trait]
 impl NodeRunner for StartRunner {
-    type ParamType = serde_json::Value;
+    type ParamType = HashMap<String, serde_json::Value>;
 
     async fn run(
         &mut self,
         _ctx: &Context,
-        _param: serde_json::Value,
+        param: Self::ParamType,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
-        // nothing need to do
-        log::info!("Start workflow!");
-        Ok(None)
+        let val = param.get("params").unwrap_or_default().clone();
+        let params: HashMap<String, serde_json::Value> =
+            serde_json::from_value(val).unwrap_or_default();
+
+        let mut outputs = HashMap::new();
+        for (k, v) in params.iter() {
+            outputs.insert(k.clone(), v.clone());
+        }
+
+        // outputs
+        Ok(Some(outputs))
     }
 }
 

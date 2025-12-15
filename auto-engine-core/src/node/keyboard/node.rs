@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
@@ -41,7 +42,7 @@ impl NodeDefine for KeyboardNode {
         })
     }
 
-    fn output_schema(&self) -> Vec<SchemaField> {
+    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
         Default::default()
     }
 

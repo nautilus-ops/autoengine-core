@@ -62,7 +62,7 @@ pub trait NodeDefine: Send + Sync {
 
     fn description(&self) -> Option<I18nValue>;
 
-    fn output_schema(&self) -> Vec<SchemaField>;
+    fn output_schema(&self, input: HashMap<String, serde_json::Value>) -> Vec<SchemaField>;
 
     fn input_schema(&self) -> Vec<SchemaField>;
 }

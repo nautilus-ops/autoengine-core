@@ -243,11 +243,18 @@ fn handle_nod(
                     .emit(NODE_EVENT, NodeEventPayload::running(node_id.clone()))
                     .unwrap_or_default();
 
-                log::info!("wait_count {} {}", action, wait_count.load(std::sync::atomic::Ordering::SeqCst));
+                log::info!(
+                    "wait_count {} {}",
+                    action,
+                    wait_count.load(std::sync::atomic::Ordering::SeqCst)
+                );
 
                 if wait_count.load(std::sync::atomic::Ordering::SeqCst) > 1 {
                     wait_count.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
-                    log::info!("waiting for {}", wait_count.load(std::sync::atomic::Ordering::SeqCst));
+                    log::info!(
+                        "waiting for {}",
+                        wait_count.load(std::sync::atomic::Ordering::SeqCst)
+                    );
                     emitter
                         .emit(NODE_EVENT, NodeEventPayload::waiting(node_id.clone()))
                         .unwrap_or_default();
@@ -501,7 +508,7 @@ mod tests {
             None
         }
 
-        fn output_schema(&self) -> Vec<SchemaField> {
+        fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
             vec![]
         }
 

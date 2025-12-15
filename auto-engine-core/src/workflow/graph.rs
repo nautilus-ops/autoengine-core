@@ -63,11 +63,12 @@ fn get_prev_node_outputs(
                 }
             };
 
-            let (action, name, prev_nodes) = {
+            let (action, name,input_data, prev_nodes) = {
                 let node_reader = node.read().await;
                 (
                     node_reader.node_context.action_type.clone(),
                     node_reader.node_context.metadata.name.clone(),
+                    node_reader.node_context.input_data.clone().unwrap_or_default(),
                     node_reader.prev.clone(),
                 )
             };
@@ -82,7 +83,7 @@ fn get_prev_node_outputs(
                     Some(define) => define,
                 }
             };
-            params.insert(name.clone(), node_define.output_schema().clone());
+            params.insert(name.clone(), node_define.output_schema(input_data).clone());
 
             log::info!("params: {:?}", params);
 
@@ -157,7 +158,7 @@ mod tests {
             None
         }
 
-        fn output_schema(&self) -> Vec<SchemaField> {
+        fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
             self.output_schema.clone()
         }
 

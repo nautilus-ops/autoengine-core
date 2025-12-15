@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use wasmtime::Enabled::No;
 use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
@@ -42,7 +43,7 @@ impl NodeDefine for ImageMatchNode {
         })
     }
 
-    fn output_schema(&self) -> Vec<SchemaField> {
+    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
         vec![SchemaField {
             name: "score".to_string(),
             field_type: FieldType::Number,
