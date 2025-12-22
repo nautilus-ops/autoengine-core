@@ -46,13 +46,13 @@ pub struct StringConstraint {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NumberConstraint {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub minimum: Option<f64>,            // >=
+    pub minimum: Option<f64>, // >=
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub exclusive_minimum: Option<f64>,  // >
+    pub exclusive_minimum: Option<f64>, // >
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub maximum: Option<f64>,            // <=
+    pub maximum: Option<f64>, // <=
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub exclusive_maximum: Option<f64>,  // <
+    pub exclusive_maximum: Option<f64>, // <
     #[serde(skip_serializing_if = "Option::is_none")]
     pub multiple_of: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -88,23 +88,15 @@ pub struct FieldCondition {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case")]
 pub enum Condition {
-    All {
-        conditions: Vec<Box<Condition>>,
-    },
-    Any {
-        conditions: Vec<Box<Condition>>,
-    },
-    Not {
-        condition: Box<Condition>,
-    },
+    All { conditions: Vec<Box<Condition>> },
+    Any { conditions: Vec<Box<Condition>> },
+    Not { condition: Box<Condition> },
     Field(FieldCondition),
 }
 
 impl Default for Condition {
     fn default() -> Self {
-        Self::All {
-            conditions: vec![],
-        }
+        Self::All { conditions: vec![] }
     }
 }
 

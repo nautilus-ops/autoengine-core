@@ -1,7 +1,9 @@
+use crate::types::field::{
+    BooleanConstraint, Condition, FieldCondition, FieldType, SchemaField, ValueConstraint,
+};
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
 use wasmtime::Enabled::No;
-use crate::types::field::{BooleanConstraint, Condition, FieldCondition, FieldType, SchemaField, ValueConstraint};
-use crate::types::node::{I18nValue, NodeDefine};
 
 #[derive(Default)]
 pub struct ImageMatchNode;
@@ -44,52 +46,57 @@ impl NodeDefine for ImageMatchNode {
         })
     }
 
-    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
-        vec![SchemaField {
-            name: "score".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "匹配结果分值，最小为0，最大为1".to_string(),
-                en: "Matching final score, minimum 0, maximum 1".to_string(),
-            }),
-            enums: vec![],
-            default: Some("0.8".to_string()),
-            condition: None,
-        }, SchemaField {
-            name: "cost_time".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "图像匹配过程消耗的时间".to_string(),
-                en: "Time consumed by the image matching process".to_string(),
-            }),
-            enums: vec![],
-            default: Some("0.8".to_string()),
-            condition: None,
-        }, SchemaField {
-            name: "x".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "匹配图像的x轴坐标".to_string(),
-                en: "X-axis coordinate of the matched image".to_string(),
-            }),
-            enums: vec![],
-            default: None,
-            condition: None,
-        }, SchemaField {
-            name: "y".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "匹配图像的y轴坐标".to_string(),
-                en: "Y-axis coordinate of the matched image".to_string(),
-            }),
-            enums: vec![],
-            default: None,
-            condition: None,
-        }]
+    fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
+        vec![
+            SchemaField {
+                name: "score".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "匹配结果分值，最小为0，最大为1".to_string(),
+                    en: "Matching final score, minimum 0, maximum 1".to_string(),
+                }),
+                enums: vec![],
+                default: Some("0.8".to_string()),
+                condition: None,
+            },
+            SchemaField {
+                name: "cost_time".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "图像匹配过程消耗的时间".to_string(),
+                    en: "Time consumed by the image matching process".to_string(),
+                }),
+                enums: vec![],
+                default: Some("0.8".to_string()),
+                condition: None,
+            },
+            SchemaField {
+                name: "x".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "匹配图像的x轴坐标".to_string(),
+                    en: "X-axis coordinate of the matched image".to_string(),
+                }),
+                enums: vec![],
+                default: None,
+                condition: None,
+            },
+            SchemaField {
+                name: "y".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "匹配图像的y轴坐标".to_string(),
+                    en: "Y-axis coordinate of the matched image".to_string(),
+                }),
+                enums: vec![],
+                default: None,
+                condition: None,
+            },
+        ]
     }
 
     fn input_schema(&self) -> Vec<SchemaField> {

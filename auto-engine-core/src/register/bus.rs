@@ -1,5 +1,7 @@
 use crate::node::data_aggregator::node::DataAggregatorNode;
 use crate::node::data_aggregator::runner::DataAggregatorRunnerFactory;
+use crate::node::http::node::HttpNode;
+use crate::node::http::runner::HttpRunnerFactory;
 use crate::node::image_match::node::ImageMatchNode;
 use crate::node::image_match::runner::ImageMatchRunnerFactory;
 use crate::node::keyboard::node::KeyboardNode;
@@ -8,6 +10,10 @@ use crate::node::mouse_click::node::MouseClickNode;
 use crate::node::mouse_click::runner::MouseClickNodeFactory;
 use crate::node::mouse_move::node::MouseMoveNode;
 use crate::node::mouse_move::runner::MouseMoveNodeFactory;
+use crate::node::ocr::node::OcrNode;
+use crate::node::ocr::runner::OcrRunnerFactory;
+use crate::node::screen_capture::node::ScreenCaptureNode;
+use crate::node::screen_capture::runner::ScreenCaptureRunnerFactory;
 use crate::node::start::node::StartNode;
 use crate::node::start::runner::StartRunnerFactory;
 use crate::node::time_wait::node::TimeWaitNode;
@@ -51,6 +57,15 @@ impl NodeRegisterBus {
             Box::new(ImageMatchNode::new()),
             Box::new(ImageMatchRunnerFactory::new()),
         );
+        self.register(
+            Box::new(HttpNode::new()),
+            Box::new(HttpRunnerFactory::new()),
+        );
+        self.register(
+            Box::new(ScreenCaptureNode::new()),
+            Box::new(ScreenCaptureRunnerFactory::new()),
+        );
+        self.register(Box::new(OcrNode::new()), Box::new(OcrRunnerFactory::new()));
         self.register(
             Box::new(TimeWaitNode::new()),
             Box::new(TimeWaitRunnerFactory::new()),

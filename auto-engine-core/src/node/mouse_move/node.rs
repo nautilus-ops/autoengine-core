@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::types::field::{FieldType, SchemaField};
 use crate::types::node::{I18nValue, NodeDefine};
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct MouseMoveNode {}
@@ -83,7 +83,7 @@ impl NodeDefine for MouseMoveNode {
                     zh: "HiDPI ".to_owned(),
                     en: "HiDPI".to_owned(),
                 }),
-                enums: vec!["100%".to_string(),"200%".to_string(),"400%".to_string()],
+                enums: vec!["100%".to_string(), "200%".to_string(), "400%".to_string()],
                 default: Some("100%".to_string()),
                 condition: None,
             },

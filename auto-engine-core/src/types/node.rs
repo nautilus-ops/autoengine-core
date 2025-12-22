@@ -1,9 +1,9 @@
 use crate::context::Context;
+use crate::types::field::{FieldType, SchemaField};
 use crate::utils;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::types::field::{FieldType, SchemaField};
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub struct I18nValue {
@@ -74,7 +74,9 @@ where
         schema_field: Vec<SchemaField>,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let mut params = params;
+        log::info!("params: {:?}, size: {}", params, params.len());
         for field in schema_field.iter() {
+            log::info!("field: {:?}", field);
             let default = field.default.clone().unwrap_or_default();
             let mut val = params
                 .get(&field.name)
@@ -123,12 +125,7 @@ where
                             field.name, res
                         ));
                     }
-                    FieldType::Object => {
-                        return Err(format!(
-                            "Field '{}' cannot be parsed as an object: {}",
-                            field.name, res
-                        ));
-                    }
+                    FieldType::Object => Default::default(),
                 };
             }
 
@@ -142,7 +139,10 @@ where
 
         if let Some(result) = self.runner.run(ctx, params).await? {
             for (name, value) in result.iter() {
-                log::info!("set value {}",format!("ctx.{}.{}", node_name, name).as_str());
+                log::info!(
+                    "set value {}",
+                    format!("ctx.{}.{}", node_name, name).as_str()
+                );
                 ctx.set_value(format!("ctx.{}.{}", node_name, name).as_str(), value)
                     .await?;
             }

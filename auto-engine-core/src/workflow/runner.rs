@@ -431,6 +431,7 @@ where
 mod tests {
     use super::*;
     use crate::node::start::{node::StartNode, runner::StartRunnerFactory};
+    use crate::types::field::SchemaField;
     use crate::types::node::{NodeRunnerControl, NodeRunnerController};
     use crate::{
         register::bus::NodeRegisterBus,
@@ -448,7 +449,6 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
     };
     use tokio_util::sync::CancellationToken;
-    use crate::types::field::SchemaField;
 
     fn metadata(name: &str) -> MetaData {
         MetaData {

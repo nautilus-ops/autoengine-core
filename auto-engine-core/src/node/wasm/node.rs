@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use crate::node_register::host;
 use crate::types::field::SchemaField;
 use crate::types::node::{I18nValue, NodeDefine};
+use std::collections::HashMap;
 
 pub struct WasmNode {
     action_type: String,

@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::types::field::{FieldType, SchemaField};
 use crate::types::node::{I18nValue, NodeDefine};
+use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct MouseClickNode {}

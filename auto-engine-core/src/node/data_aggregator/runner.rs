@@ -35,7 +35,7 @@ impl NodeRunner for DataAggregatorRunner {
             let map = ctx.string_value.read().await;
             log::info!("map: {:?}", map.keys());
         }
-        let mut values= vec![];
+        let mut values = vec![];
 
         for source in param.sources.iter() {
             match ctx.get_value_parse(source).await {

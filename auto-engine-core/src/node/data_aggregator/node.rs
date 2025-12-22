@@ -1,6 +1,6 @@
+use crate::types::field::{FieldType, SchemaField};
 use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
-use crate::types::field::{FieldType, SchemaField};
 
 pub const NODE_TYPE: &str = "DataAggregator";
 
@@ -45,7 +45,7 @@ impl NodeDefine for DataAggregatorNode {
         })
     }
 
-    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
+    fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
         vec![
             SchemaField {
                 name: "result".to_string(),

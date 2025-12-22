@@ -1,12 +1,12 @@
 use crate::register::bus::NodeRegisterBus;
 use crate::schema::node::NodeSchema;
+use crate::types::field::SchemaField;
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use tokio::sync::RwLock;
-use crate::types::field::SchemaField;
 
 #[derive(Debug, Clone)]
 pub struct GraphNode {
@@ -63,12 +63,16 @@ fn get_prev_node_outputs(
                 }
             };
 
-            let (action, name,input_data, prev_nodes) = {
+            let (action, name, input_data, prev_nodes) = {
                 let node_reader = node.read().await;
                 (
                     node_reader.node_context.action_type.clone(),
                     node_reader.node_context.metadata.name.clone(),
-                    node_reader.node_context.input_data.clone().unwrap_or_default(),
+                    node_reader
+                        .node_context
+                        .input_data
+                        .clone()
+                        .unwrap_or_default(),
                     node_reader.prev.clone(),
                 )
             };
@@ -103,8 +107,8 @@ fn get_prev_node_outputs(
 mod tests {
     use super::*;
     use crate::schema::node::Position;
-    use crate::types::field::{FieldType, SchemaField};
     use crate::types::MetaData;
+    use crate::types::field::{FieldType, SchemaField};
     use crate::types::node::{I18nValue, NodeDefine};
 
     fn create_test_metadata(name: &str) -> MetaData {
