@@ -1,5 +1,3 @@
-use crate::types::node::NodeRunnerControl;
-use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::time::Duration;
 use std::{
@@ -11,6 +9,7 @@ use tokio::task::JoinSet;
 use tokio::time::{Instant, sleep_until};
 use tokio_util::sync::CancellationToken;
 
+use crate::workflow::BoxFuture;
 use crate::{
     context::Context,
     event::{NODE_EVENT, NodeEventPayload, WORKFLOW_EVENT, WorkflowEventPayload, WorkflowStatus},
@@ -181,19 +180,15 @@ impl WorkflowRunner {
     }
 }
 
+type WorkflowResult = Result<Option<HashMap<String, serde_json::Value>>, String>;
+
 fn handle_nod(
     graph: Vec<Arc<std::sync::RwLock<GraphNode>>>,
     ctx: Arc<Context>,
     token: CancellationToken,
     bus: Arc<RwLock<NodeRegisterBus>>,
     emitter: Arc<NotificationEmitter>,
-) -> Pin<
-    Box<
-        dyn Future<Output = Result<Option<HashMap<String, serde_json::Value>>, String>>
-            + Send
-            + 'static,
-    >,
-> {
+) -> BoxFuture<WorkflowResult> {
     Box::pin(async move {
         let mut tasks: JoinSet<Result<Option<HashMap<String, serde_json::Value>>, String>> =
             JoinSet::new();

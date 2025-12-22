@@ -1,9 +1,8 @@
 use crate::register::bus::NodeRegisterBus;
 use crate::schema::node::NodeSchema;
 use crate::types::field::SchemaField;
+use crate::workflow::BoxFuture;
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use tokio::sync::RwLock;
@@ -51,7 +50,7 @@ fn get_prev_node_outputs(
     nodes: HashMap<String, Arc<RwLock<GraphNode>>>,
     bus: Arc<RwLock<NodeRegisterBus>>,
     prev_nodes: Vec<String>,
-) -> Pin<Box<dyn Future<Output = Result<HashMap<String, Vec<SchemaField>>, String>> + Send>> {
+) -> BoxFuture<Result<HashMap<String, Vec<SchemaField>>, String>> {
     Box::pin(async move {
         let mut params = HashMap::new();
         for node_id in prev_nodes {

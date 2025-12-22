@@ -3,7 +3,6 @@ use crate::types::node::{NodeRunner, NodeRunnerControl, NodeRunnerController, No
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DataAggregatorParam {
@@ -52,7 +51,7 @@ impl NodeRunner for DataAggregatorRunner {
                 // Array mode: return values as an array
                 Value::Array(values)
             }
-            "object" | _ => {
+            "object" => {
                 // Object mode: use keys if provided, otherwise use indices
                 let mut map = serde_json::Map::new();
                 for (i, value) in values.iter().enumerate() {
@@ -64,6 +63,9 @@ impl NodeRunner for DataAggregatorRunner {
                     map.insert(key, value.clone());
                 }
                 Value::Object(map)
+            }
+            _ => {
+                return Err(format!("Invalid mode: {}", param.mode));
             }
         };
 
