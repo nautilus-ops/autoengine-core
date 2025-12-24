@@ -1,5 +1,6 @@
+use crate::types::field::{FieldType, SchemaField};
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
-use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
 pub struct MouseClickNode {}
@@ -24,7 +25,7 @@ impl NodeDefine for MouseClickNode {
 
     fn icon(&self) -> String {
         String::from(
-            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1vdXNlLXBvaW50ZXItY2xpY2staWNvbiBsdWNpZGUtbW91c2UtcG9pbnRlci1jbGljayI+PHBhdGggZD0iTTE0IDQuMSAxMiA2Ii8+PHBhdGggZD0ibTUuMSA4LTIuOS0uOCIvPjxwYXRoIGQ9Im02IDEyLTEuOSAyIi8+PHBhdGggZD0iTTcuMiAyLjIgOCA1LjEiLz48cGF0aCBkPSJNOS4wMzcgOS42OWEuNDk4LjQ5OCAwIDAgMSAuNjUzLS42NTNsMTEgNC41YS41LjUgMCAwIDEtLjA3NC45NDlsLTQuMzQ5IDEuMDQxYTEgMSAwIDAgMC0uNzQuNzM5bC0xLjA0IDQuMzVhLjUuNSAwIDAgMS0uOTUuMDc0eiIvPjwvc3ZnPg==",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUtbW91c2UtcG9pbnRlci1jbGljay1pY29uIGx1Y2lkZS1tb3VzZS1wb2ludGVyLWNsaWNrIj48cGF0aCBkPSJNMTQgNC4xIDEyIDYiLz48cGF0aCBkPSJtNS4xIDgtMi45LS44Ii8+PHBhdGggZD0ibTYgMTItMS45IDIiLz48cGF0aCBkPSJNNy4yIDIuMiA4IDUuMSIvPjxwYXRoIGQ9Ik05LjAzNyA5LjY5YS40OTguNDk4IDAgMCAxIC42NTMtLjY1M2wxMSA0LjVhLjUuNSAwIDAgMS0uMDc0Ljk0OWwtNC4zNDkgMS4wNDFhMSAxIDAgMCAwLS43NC43MzlsLTEuMDQgNC4zNWEuNS41IDAgMCAxLS45NS4wNzR6Ii8+PC9zdmc+",
         )
     }
 
@@ -57,6 +58,7 @@ impl NodeDefine for MouseClickNode {
             }),
             enums: vec!["left".to_string(), "right".to_string()],
             default: Some("left".to_string()),
+            condition: None,
         }]
     }
 }

@@ -29,7 +29,6 @@ pub async fn parse_variables(context: &Context, input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::borrow::Cow;
     use std::path::PathBuf;
 
     #[tokio::test]

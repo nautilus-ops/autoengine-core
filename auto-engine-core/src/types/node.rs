@@ -1,4 +1,5 @@
 use crate::context::Context;
+use crate::types::field::{FieldType, SchemaField};
 use crate::utils;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -8,34 +9,6 @@ use std::collections::HashMap;
 pub struct I18nValue {
     pub zh: String,
     pub en: String,
-}
-
-#[derive(Clone, Default, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "snake_case")]
-pub enum FieldType {
-    #[default]
-    String,
-    Number,
-    Boolean,
-    Array,
-    Object,
-    Image,
-    File,
-}
-
-#[derive(Clone, Default, Serialize, Debug, Deserialize)]
-pub struct SchemaField {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub field_type: FieldType,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub item_type: Option<FieldType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<I18nValue>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub enums: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default: Option<String>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
@@ -101,7 +74,9 @@ where
         schema_field: Vec<SchemaField>,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
         let mut params = params;
+        log::info!("params: {:?}, size: {}", params, params.len());
         for field in schema_field.iter() {
+            log::info!("field: {:?}", field);
             let default = field.default.clone().unwrap_or_default();
             let mut val = params
                 .get(&field.name)
@@ -150,12 +125,7 @@ where
                             field.name, res
                         ));
                     }
-                    FieldType::Object => {
-                        return Err(format!(
-                            "Field '{}' cannot be parsed as an object: {}",
-                            field.name, res
-                        ));
-                    }
+                    FieldType::Object => Default::default(),
                 };
             }
 
@@ -169,7 +139,10 @@ where
 
         if let Some(result) = self.runner.run(ctx, params).await? {
             for (name, value) in result.iter() {
-                log::info!("set value {}",format!("ctx.{}.{}", node_name, name).as_str());
+                log::info!(
+                    "set value {}",
+                    format!("ctx.{}.{}", node_name, name).as_str()
+                );
                 ctx.set_value(format!("ctx.{}.{}", node_name, name).as_str(), value)
                     .await?;
             }

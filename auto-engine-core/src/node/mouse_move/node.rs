@@ -1,5 +1,6 @@
+use crate::types::field::{FieldType, SchemaField};
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
-use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
 pub struct MouseMoveNode {}
@@ -24,7 +25,7 @@ impl NodeDefine for MouseMoveNode {
 
     fn icon(&self) -> String {
         String::from(
-            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNwbGluZS1wb2ludGVyLWljb24gbHVjaWRlLXNwbGluZS1wb2ludGVyIj48cGF0aCBkPSJNMTIuMDM0IDEyLjY4MWEuNDk4LjQ5OCAwIDAgMSAuNjQ3LS42NDdsOSAzLjVhLjUuNSAwIDAgMS0uMDMzLjk0M2wtMy40NDQgMS4wNjhhMSAxIDAgMCAwLS42Ni42NmwtMS4wNjcgMy40NDNhLjUuNSAwIDAgMS0uOTQzLjAzM3oiLz48cGF0aCBkPSJNNSAxN0ExMiAxMiAwIDAgMSAxNyA1Ii8+PGNpcmNsZSBjeD0iMTkiIGN5PSI1IiByPSIyIi8+PGNpcmNsZSBjeD0iNSIgY3k9IjE5IiByPSIyIi8+PC9zdmc+",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUtc3BsaW5lLXBvaW50ZXItaWNvbiBsdWNpZGUtc3BsaW5lLXBvaW50ZXIiPjxwYXRoIGQ9Ik0xMi4wMzQgMTIuNjgxYS40OTguNDk4IDAgMCAxIC42NDctLjY0N2w5IDMuNWEuNS41IDAgMCAxLS4wMzMuOTQzbC0zLjQ0NCAxLjA2OGExIDEgMCAwIDAtLjY2LjY2bC0xLjA2NyAzLjQ0M2EuNS41IDAgMCAxLS45NDMuMDMzeiIvPjxwYXRoIGQ9Ik01IDE3QTEyIDEyIDAgMCAxIDE3IDUiLz48Y2lyY2xlIGN4PSIxOSIgY3k9IjUiIHI9IjIiLz48Y2lyY2xlIGN4PSI1IiBjeT0iMTkiIHI9IjIiLz48L3N2Zz4=",
         )
     }
 
@@ -60,6 +61,7 @@ impl NodeDefine for MouseMoveNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
             SchemaField {
                 name: "y".to_owned(),
@@ -71,6 +73,7 @@ impl NodeDefine for MouseMoveNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
             SchemaField {
                 name: "hidpi".to_owned(),
@@ -80,8 +83,9 @@ impl NodeDefine for MouseMoveNode {
                     zh: "HiDPI ".to_owned(),
                     en: "HiDPI".to_owned(),
                 }),
-                enums: vec!["100%".to_string(),"200%".to_string(),"400%".to_string()],
+                enums: vec!["100%".to_string(), "200%".to_string(), "400%".to_string()],
                 default: Some("100%".to_string()),
+                condition: None,
             },
         ]
     }

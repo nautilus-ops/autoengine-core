@@ -13,30 +13,32 @@ pub struct Conditions {
 }
 
 impl Conditions {
-    pub async fn check(&self, ctx: &Context) -> Result<(), String> {
+    pub async fn check(&self, ctx: &Context) -> Result<bool, String> {
         if let Some(key) = &self.exist {
             let values = ctx.string_value.read().await;
             if !values.contains_key(key) {
                 log::info!("{} does not exist, {:?}", key, values);
-                return Err(format!("{} does not exist", key));
+                return Ok(false);
             }
-            log::info!("key exists {key} {}", values.get(key).unwrap());
         }
 
         if let Some(key) = &self.not_exist {
             let values = ctx.string_value.read().await;
             if values.contains_key(key) {
-                return Err(format!("{} does not exist", key));
+                log::info!("{} does not exist, {:?}", key, values);
+                return Ok(false);
             }
         }
 
         if let Some(condition) = &self.condition {
             let condition = utils::parse_variables(ctx, condition).await;
-            if let Err(err) = evalexpr::eval_boolean(&condition) {
-                return Err(format!("{} is not boolean", err));
+            let result = evalexpr::eval_boolean(&condition).map_err(|err| format!("{} is not boolean", err))?;
+            if !result {
+                log::info!("{} does not pass condition", condition);
+                return Ok(false);
             }
         }
-        Ok(())
+        Ok(true)
     }
 }
 

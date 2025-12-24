@@ -1,6 +1,8 @@
+use crate::types::field::{
+    BooleanConstraint, Condition, FieldCondition, FieldType, SchemaField, ValueConstraint,
+};
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
-use wasmtime::Enabled::No;
-use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
 pub struct ImageMatchNode;
@@ -25,7 +27,7 @@ impl NodeDefine for ImageMatchNode {
 
     fn icon(&self) -> String {
         String::from(
-            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWltYWdlcy1pY29uIGx1Y2lkZS1pbWFnZXMiPjxwYXRoIGQ9Im0yMiAxMS0xLjI5Ni0xLjI5NmEyLjQgMi40IDAgMCAwLTMuNDA4IDBMMTEgMTYiLz48cGF0aCBkPSJNNCA4YTIgMiAwIDAgMC0yIDJ2MTBhMiAyIDAgMCAwIDIgMmgxMGEyIDIgMCAwIDAgMi0yIi8+PGNpcmNsZSBjeD0iMTMiIGN5PSI3IiByPSIxIiBmaWxsPSJjdXJyZW50Q29sb3IiLz48cmVjdCB4PSI4IiB5PSIyIiB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHJ4PSIyIi8+PC9zdmc+",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUtaW1hZ2VzLWljb24gbHVjaWRlLWltYWdlcyI+PHBhdGggZD0ibTIyIDExLTEuMjk2LTEuMjk2YTIuNCAyLjQgMCAwIDAtMy40MDggMEwxMSAxNiIvPjxwYXRoIGQ9Ik00IDhhMiAyIDAgMCAwLTIgMnYxMGEyIDIgMCAwIDAgMiAyaDEwYTIgMiAwIDAgMCAyLTIiLz48Y2lyY2xlIGN4PSIxMyIgY3k9IjciIHI9IjEiIGZpbGw9ImN1cnJlbnRDb2xvciIvPjxyZWN0IHg9IjgiIHk9IjIiIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgcng9IjIiLz48L3N2Zz4=",
         )
     }
 
@@ -43,48 +45,57 @@ impl NodeDefine for ImageMatchNode {
         })
     }
 
-    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
-        vec![SchemaField {
-            name: "score".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "匹配结果分值，最小为0，最大为1".to_string(),
-                en: "Matching final score, minimum 0, maximum 1".to_string(),
-            }),
-            enums: vec![],
-            default: Some("0.8".to_string()),
-        },SchemaField {
-            name: "cost_time".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "图像匹配过程消耗的时间".to_string(),
-                en: "Time consumed by the image matching process".to_string(),
-            }),
-            enums: vec![],
-            default: Some("0.8".to_string()),
-        },SchemaField {
-            name: "x".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "匹配图像的x轴坐标".to_string(),
-                en: "X-axis coordinate of the matched image".to_string(),
-            }),
-            enums: vec![],
-            default: None,
-        },SchemaField {
-            name: "y".to_string(),
-            field_type: FieldType::Number,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "匹配图像的y轴坐标".to_string(),
-                en: "Y-axis coordinate of the matched image".to_string(),
-            }),
-            enums: vec![],
-            default: None,
-        }]
+    fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
+        vec![
+            SchemaField {
+                name: "score".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "匹配结果分值，最小为0，最大为1".to_string(),
+                    en: "Matching final score, minimum 0, maximum 1".to_string(),
+                }),
+                enums: vec![],
+                default: Some("0.8".to_string()),
+                condition: None,
+            },
+            SchemaField {
+                name: "cost_time".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "图像匹配过程消耗的时间".to_string(),
+                    en: "Time consumed by the image matching process".to_string(),
+                }),
+                enums: vec![],
+                default: Some("0.8".to_string()),
+                condition: None,
+            },
+            SchemaField {
+                name: "x".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "匹配图像的x轴坐标".to_string(),
+                    en: "X-axis coordinate of the matched image".to_string(),
+                }),
+                enums: vec![],
+                default: None,
+                condition: None,
+            },
+            SchemaField {
+                name: "y".to_string(),
+                field_type: FieldType::Number,
+                item_type: None,
+                description: Some(I18nValue {
+                    zh: "匹配图像的y轴坐标".to_string(),
+                    en: "Y-axis coordinate of the matched image".to_string(),
+                }),
+                enums: vec![],
+                default: None,
+                condition: None,
+            },
+        ]
     }
 
     fn input_schema(&self) -> Vec<SchemaField> {
@@ -99,6 +110,7 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec![],
                 default: Some("0.8".to_string()),
+                condition: None,
             },
             SchemaField {
                 name: "imread_type".to_string(),
@@ -110,6 +122,7 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec!["Grayscale".to_string(), "Color".to_string()],
                 default: Some("Grayscale".to_string()),
+                condition: None,
             },
             SchemaField {
                 name: "use_screenshot".to_string(),
@@ -121,6 +134,7 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
             SchemaField {
                 name: "resize".to_string(),
@@ -132,6 +146,7 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec![String::from("0.5"), String::from("1"), String::from("2")],
                 default: Some(String::from("1")),
+                condition: None,
             },
             SchemaField {
                 name: "template_image".to_string(),
@@ -143,6 +158,7 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
             SchemaField {
                 name: "source_image".to_string(),
@@ -154,6 +170,13 @@ impl NodeDefine for ImageMatchNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: Some(Condition::Field(FieldCondition{
+                    field: "use_screenshot".to_string(),
+                    constraint: ValueConstraint::Boolean(BooleanConstraint{
+                        equals: false,
+                    }),
+                    required: true,
+                })),
             },
         ]
     }

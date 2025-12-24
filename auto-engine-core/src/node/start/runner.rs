@@ -1,4 +1,4 @@
-use crate::types::node::{NodeRunnerControl, NodeRunnerController, SchemaField};
+use crate::types::node::{NodeRunnerControl, NodeRunnerController};
 use crate::{
     context::Context,
     types::node::{NodeRunner, NodeRunnerFactory},

@@ -1,8 +1,11 @@
 pub mod data_aggregator;
+pub mod http;
 pub mod image_match;
 pub mod keyboard;
 pub mod mouse_click;
 pub mod mouse_move;
+pub mod ocr;
+pub mod screen_capture;
 pub mod start;
 pub mod time_wait;
 #[cfg(feature = "wasm")]

@@ -1,5 +1,3 @@
-use crate::types::node::NodeRunnerControl;
-use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::time::Duration;
 use std::{
@@ -11,6 +9,7 @@ use tokio::task::JoinSet;
 use tokio::time::{Instant, sleep_until};
 use tokio_util::sync::CancellationToken;
 
+use crate::workflow::BoxFuture;
 use crate::{
     context::Context,
     event::{NODE_EVENT, NodeEventPayload, WORKFLOW_EVENT, WorkflowEventPayload, WorkflowStatus},
@@ -181,19 +180,15 @@ impl WorkflowRunner {
     }
 }
 
+type WorkflowResult = Result<Option<HashMap<String, serde_json::Value>>, String>;
+
 fn handle_nod(
     graph: Vec<Arc<std::sync::RwLock<GraphNode>>>,
     ctx: Arc<Context>,
     token: CancellationToken,
     bus: Arc<RwLock<NodeRegisterBus>>,
     emitter: Arc<NotificationEmitter>,
-) -> Pin<
-    Box<
-        dyn Future<Output = Result<Option<HashMap<String, serde_json::Value>>, String>>
-            + Send
-            + 'static,
-    >,
-> {
+) -> BoxFuture<WorkflowResult> {
     Box::pin(async move {
         let mut tasks: JoinSet<Result<Option<HashMap<String, serde_json::Value>>, String>> =
             JoinSet::new();
@@ -214,6 +209,18 @@ fn handle_nod(
                     node_read.wait_count.clone(),
                 )
             };
+
+            if let Some(condition) = node_schema.metadata.conditions {
+                if !condition.check(&ctx).await? {
+                    emitter
+                        .emit(
+                            NODE_EVENT,
+                            NodeEventPayload::skip::<String>(node_id.clone(), None),
+                        )
+                        .unwrap_or_default();
+                    continue;
+                }
+            }
 
             let action = node_schema.action_type.clone();
 
@@ -428,20 +435,21 @@ where
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use super::*;
     use crate::node::start::{node::StartNode, runner::StartRunnerFactory};
+    use crate::types::field::SchemaField;
     use crate::types::node::{NodeRunnerControl, NodeRunnerController};
     use crate::{
         register::bus::NodeRegisterBus,
         schema::{node::Position, workflow::Connection},
         types::{
             MetaData,
-            node::{I18nValue, NodeDefine, NodeRunner, NodeRunnerFactory, SchemaField},
+            node::{I18nValue, NodeDefine, NodeRunner, NodeRunnerFactory},
         },
     };
     use serde_json::Value as JsonValue;
-    use serde_yaml::Value;
     use std::path::PathBuf;
     use std::sync::{
         Mutex,
@@ -524,7 +532,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl NodeRunner for TestRunner {
-        type ParamType = ();
+        type ParamType = HashMap<String, serde_json::Value>;
 
         async fn run(
             &mut self,
@@ -552,7 +560,10 @@ mod tests {
                     action_type: "Start".to_string(),
                     metadata: metadata("start"),
                     params: None,
-                    input_data: None,
+                    input_data: Some(HashMap::from([(
+                        "params".to_string(),
+                        serde_json::json!({"start_value": 1}),
+                    )])),
                     position: Position::default(),
                     icon: None,
                     type_define: None,
@@ -561,11 +572,11 @@ mod tests {
                     node_id: "node-1".to_string(),
                     action_type: "Custom".to_string(),
                     metadata: metadata("custom"),
-                    params: Some(HashMap::from([(
-                        Value::String("foo".to_string()),
-                        Value::String("bar".to_string()),
+                    params: None,
+                    input_data: Some(HashMap::from([(
+                        "foo".to_string(),
+                        serde_json::json!("bar"),
                     )])),
-                    input_data: None,
                     position: Position::default(),
                     icon: None,
                     type_define: None,
@@ -615,6 +626,12 @@ mod tests {
             .expect("workflow should run successfully");
 
         assert_eq!(counter.load(Ordering::SeqCst), 1);
+        let stored_params = params.lock().expect("lock params failed").clone();
+        assert_eq!(
+            stored_params,
+            Some(serde_json::json!({"foo": "bar"})),
+            "runner should receive input_data"
+        );
     }
 
     #[test]
@@ -641,6 +658,16 @@ mod tests {
                     icon: None,
                     type_define: None,
                 },
+                NodeSchema {
+                    node_id: "node-2".to_string(),
+                    action_type: "Custom".to_string(),
+                    metadata: metadata("custom-2"),
+                    params: None,
+                    input_data: None,
+                    position: Position::default(),
+                    icon: None,
+                    type_define: None,
+                },
             ],
             connections: vec![
                 Connection {
@@ -649,7 +676,11 @@ mod tests {
                 },
                 Connection {
                     from: "node-1".to_string(),
-                    to: "node-0".to_string(),
+                    to: "node-2".to_string(),
+                },
+                Connection {
+                    from: "node-2".to_string(),
+                    to: "node-1".to_string(),
                 },
             ],
         };

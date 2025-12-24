@@ -1,9 +1,8 @@
 use crate::register::bus::NodeRegisterBus;
 use crate::schema::node::NodeSchema;
-use crate::types::node::SchemaField;
+use crate::types::field::SchemaField;
+use crate::workflow::BoxFuture;
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use tokio::sync::RwLock;
@@ -51,7 +50,7 @@ fn get_prev_node_outputs(
     nodes: HashMap<String, Arc<RwLock<GraphNode>>>,
     bus: Arc<RwLock<NodeRegisterBus>>,
     prev_nodes: Vec<String>,
-) -> Pin<Box<dyn Future<Output = Result<HashMap<String, Vec<SchemaField>>, String>> + Send>> {
+) -> BoxFuture<Result<HashMap<String, Vec<SchemaField>>, String>> {
     Box::pin(async move {
         let mut params = HashMap::new();
         for node_id in prev_nodes {
@@ -63,12 +62,16 @@ fn get_prev_node_outputs(
                 }
             };
 
-            let (action, name,input_data, prev_nodes) = {
+            let (action, name, input_data, prev_nodes) = {
                 let node_reader = node.read().await;
                 (
                     node_reader.node_context.action_type.clone(),
                     node_reader.node_context.metadata.name.clone(),
-                    node_reader.node_context.input_data.clone().unwrap_or_default(),
+                    node_reader
+                        .node_context
+                        .input_data
+                        .clone()
+                        .unwrap_or_default(),
                     node_reader.prev.clone(),
                 )
             };
@@ -104,7 +107,8 @@ mod tests {
     use super::*;
     use crate::schema::node::Position;
     use crate::types::MetaData;
-    use crate::types::node::{FieldType, I18nValue, NodeDefine};
+    use crate::types::field::{FieldType, SchemaField};
+    use crate::types::node::{I18nValue, NodeDefine};
 
     fn create_test_metadata(name: &str) -> MetaData {
         MetaData {
@@ -126,6 +130,7 @@ mod tests {
             description: None,
             enums: vec![],
             default: None,
+            condition: None,
         }
     }
 

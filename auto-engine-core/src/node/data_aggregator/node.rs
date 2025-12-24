@@ -1,4 +1,5 @@
-use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
+use crate::types::field::{FieldType, SchemaField};
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
 
 pub const NODE_TYPE: &str = "DataAggregator";
@@ -26,7 +27,7 @@ impl NodeDefine for DataAggregatorNode {
 
     fn icon(&self) -> String {
         String::from(
-            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMSAxNlY4YTIgMiAwIDAgMC0xLTEuNzNsLTctNGEyIDIgMCAwIDAtMiAwbC03IDRBMiAyIDAgMCAwIDMgOHY4YTIgMiAwIDAgMCAxIDEuNzNsNyA0YTIgMiAwIDAgMCAyIDBsNy00QTIgMiAwIDAgMCAyMSAxNnoiLz48cG9seWxpbmUgcG9pbnRzPSI3LjUgNC4yMSAxMiA2LjgxIDE2LjUgNC4yMSIvPjxwb2x5bGluZSBwb2ludHM9IjcuNSAxOS43OSA3LjUgMTQuNiAzIDE3LjQiLz48cG9seWxpbmUgcG9pbnRzPSIyMSAxMi4yIDIxIDE2Ljc5IDE2LjUgMTkuNzkgMTYuNSAxNC42Ii8+PHBvbHlsaW5lIHBvaW50cz0iMy4yNyA2Ljk2IDEyIDEyLjAxIDIwLjczIDYuOTYiLz48bGluZSB4MT0iMTIiIHgyPSIxMiIgeTE9IjIyLjA4IiB5Mj0iMTIiLz48L3N2Zz4=",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUtYmV0d2Vlbi1ob3Jpem9udGFsLXN0YXJ0LWljb24gbHVjaWRlLWJldHdlZW4taG9yaXpvbnRhbC1zdGFydCI+PHJlY3Qgd2lkdGg9IjEzIiBoZWlnaHQ9IjciIHg9IjgiIHk9IjMiIHJ4PSIxIi8+PHBhdGggZD0ibTIgOSAzIDMtMyAzIi8+PHJlY3Qgd2lkdGg9IjEzIiBoZWlnaHQ9IjciIHg9IjgiIHk9IjE0IiByeD0iMSIvPjwvc3ZnPg==",
         )
     }
 
@@ -44,7 +45,7 @@ impl NodeDefine for DataAggregatorNode {
         })
     }
 
-    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
+    fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
         vec![
             SchemaField {
                 name: "result".to_string(),
@@ -56,6 +57,7 @@ impl NodeDefine for DataAggregatorNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
             SchemaField {
                 name: "count".to_string(),
@@ -67,6 +69,7 @@ impl NodeDefine for DataAggregatorNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
         ]
     }
@@ -83,6 +86,7 @@ impl NodeDefine for DataAggregatorNode {
                 }),
                 enums: vec!["object".to_string(), "array".to_string()],
                 default: Some("object".to_string()),
+                condition: None,
             },
             SchemaField {
                 name: "sources".to_string(),
@@ -95,6 +99,7 @@ impl NodeDefine for DataAggregatorNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
             SchemaField {
                 name: "keys".to_string(),
@@ -106,6 +111,7 @@ impl NodeDefine for DataAggregatorNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
         ]
     }

@@ -1,10 +1,10 @@
+use crate::schema::workflow::WorkflowSchema;
+use crate::workflow::graph::{Graph, GraphNode};
 use std::collections::{HashMap, HashSet};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use tokio::sync::{Mutex, RwLock};
-use crate::schema::workflow::WorkflowSchema;
-use crate::workflow::graph::{Graph, GraphNode};
 
 fn build_graph(
     node_id: String,
@@ -44,7 +44,14 @@ fn build_graph(
                 node_writer.prev.push(node_id.to_string());
             }
 
-            build_graph(next_node_id.to_string(), graph_nodes.clone(), edges.clone(), visited.clone(), visiting.clone()).await?;
+            build_graph(
+                next_node_id.to_string(),
+                graph_nodes.clone(),
+                edges.clone(),
+                visited.clone(),
+                visiting.clone(),
+            )
+            .await?;
 
             next_nodes.push(rc_node);
         }
@@ -67,7 +74,7 @@ pub struct Builder {
 
 impl Builder {
     pub fn new(workflow: WorkflowSchema) -> Self {
-        Self {workflow}
+        Self { workflow }
     }
 
     pub async fn build(self) -> Result<Graph, String> {
@@ -125,13 +132,22 @@ impl Builder {
         let visited = HashSet::new();
         let visiting = HashSet::new();
         for key in start_nodes.iter() {
-            build_graph(key.to_string(), graph_nodes.clone(), Arc::new(edges.clone()), Arc::new(Mutex::new(visited.clone())), Arc::new(Mutex::new(visiting.clone()))).await?;
+            build_graph(
+                key.to_string(),
+                graph_nodes.clone(),
+                Arc::new(edges.clone()),
+                Arc::new(Mutex::new(visited.clone())),
+                Arc::new(Mutex::new(visiting.clone())),
+            )
+            .await?;
             if let Some(node) = graph_nodes.get(key) {
                 graph.push(node.clone());
             }
         }
 
-        Ok(Graph { nodes: graph_nodes, starts: graph })
+        Ok(Graph {
+            nodes: graph_nodes,
+            starts: graph,
+        })
     }
 }
-

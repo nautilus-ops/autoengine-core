@@ -40,14 +40,22 @@ mod test {
     #[test]
     pub fn test_deserialize() {
         let yaml_str = r#"
+node_id: image-1
 action_type: Image
 name: 图像识别
-params:
+input_data:
   images:
     - a.png
+  sub_pipeline: ""
             "#;
         let node: NodeSchema = serde_yaml::from_str(yaml_str).unwrap();
 
-        println!("node schema {:?}", node);
+        assert_eq!(node.node_id, "image-1");
+        assert_eq!(node.metadata.name, "图像识别");
+        let input_data = node.input_data.expect("input_data should exist");
+        assert_eq!(
+            input_data.get("images"),
+            Some(&serde_json::json!(["a.png"]))
+        );
     }
 }

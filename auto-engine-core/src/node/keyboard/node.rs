@@ -1,5 +1,6 @@
+use crate::types::field::{FieldType, SchemaField};
+use crate::types::node::{I18nValue, NodeDefine};
 use std::collections::HashMap;
-use crate::types::node::{FieldType, I18nValue, NodeDefine, SchemaField};
 
 #[derive(Default)]
 pub struct KeyboardNode {}
@@ -24,7 +25,7 @@ impl NodeDefine for KeyboardNode {
 
     fn icon(&self) -> String {
         String::from(
-            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWtleWJvYXJkIj48cmVjdCB4PSIyIiB5PSI2IiB3aWR0aD0iMjAiIGhlaWdodD0iMTIiIHJ4PSIyIiByeT0iMiIvPjxwYXRoIGQ9Ik02IDEwaC4wMU0xMCAxMGguMDFNMTQgMTBoLjAxTTE4IDEwaC4wMU02IDE0aDEyIi8+PC9zdmc+",
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUta2V5Ym9hcmQtaWNvbiBsdWNpZGUta2V5Ym9hcmQiPjxwYXRoIGQ9Ik0xMCA4aC4wMSIvPjxwYXRoIGQ9Ik0xMiAxMmguMDEiLz48cGF0aCBkPSJNMTQgOGguMDEiLz48cGF0aCBkPSJNMTYgMTJoLjAxIi8+PHBhdGggZD0iTTE4IDhoLjAxIi8+PHBhdGggZD0iTTYgOGguMDEiLz48cGF0aCBkPSJNNyAxNmgxMCIvPjxwYXRoIGQ9Ik04IDEyaC4wMSIvPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxNiIgeD0iMiIgeT0iNCIgcng9IjIiLz48L3N2Zz4=",
         )
     }
 
@@ -42,7 +43,7 @@ impl NodeDefine for KeyboardNode {
         })
     }
 
-    fn output_schema(&self,_input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
+    fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
         Default::default()
     }
 
@@ -63,6 +64,7 @@ impl NodeDefine for KeyboardNode {
                     "Type".to_string(),
                 ],
                 default: Some("Click".to_string()),
+                condition: None,
             },
             SchemaField {
                 name: "key".to_owned(),
@@ -74,6 +76,7 @@ impl NodeDefine for KeyboardNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
             SchemaField {
                 name: "value".to_owned(),
@@ -85,6 +88,7 @@ impl NodeDefine for KeyboardNode {
                 }),
                 enums: vec![],
                 default: None,
+                condition: None,
             },
         ]
     }

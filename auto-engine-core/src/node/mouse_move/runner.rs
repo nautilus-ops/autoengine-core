@@ -35,14 +35,14 @@ impl NodeRunner for MouseMoveRunner {
 
     async fn run(
         &mut self,
-        ctx: &Context,
+        _ctx: &Context,
         params: Self::ParamType,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
-        let rate: f64 = match params.hidpi.as_str()  {
-            "100%" => {1.0}
-            "200%" => {2.0}
-            "400%" => {4.0}
-            _ => {1.0}
+        let rate: f64 = match params.hidpi.as_str() {
+            "100%" => 1.0,
+            "200%" => 2.0,
+            "400%" => 4.0,
+            _ => 1.0,
         };
 
         let x: i32 = params.x;

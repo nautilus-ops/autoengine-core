@@ -62,14 +62,13 @@ impl Context {
     pub async fn get_value_parse(&self, key: &str) -> Option<serde_json::Value> {
         let mut default_value = None;
         let mut key = key.to_string();
-        for caps in utils::REGEX_PARSE_VARIABLES.captures_iter(&key) {
-            let var_name = (&caps[1]).to_string();
+        if let Some(caps) = utils::REGEX_PARSE_VARIABLES.captures_iter(&key).next() {
+            let var_name = (caps[1]).to_string();
             let default = caps.get(2).map(|m| m.as_str()).unwrap_or("");
-            if default != "" {
+            if !default.is_empty() {
                 default_value = Some(serde_json::Value::String(default.to_string()));
             }
             key = var_name;
-            break;
         }
 
         let value = self.get_value(&key).await;
