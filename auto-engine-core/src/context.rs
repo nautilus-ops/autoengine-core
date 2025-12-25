@@ -1,9 +1,10 @@
 use crate::utils;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::async_runtime::RwLock;
+use tauri::Manager;
 
 #[derive(Debug)]
 pub struct Context {
@@ -85,5 +86,15 @@ impl Context {
             return Err(format!("Image {} does not exist", image));
         }
         Ok(image_path)
+    }
+
+    pub fn resource_path(&self) -> PathBuf {
+        if let Some(handle) = self.app_handle.clone(){
+            if cfg!(debug_assertions) {
+                return PathBuf::from("")
+            }
+            return handle.path().resource_dir().unwrap().to_path_buf()
+        }
+        PathBuf::from("")
     }
 }

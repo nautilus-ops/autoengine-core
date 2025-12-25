@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
+use tauri::Manager;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OcrParams {
@@ -43,13 +44,23 @@ impl NodeRunner for OcrRunner {
         ctx: &Context,
         param: Self::ParamType,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+        let handle = ctx.app_handle.clone().unwrap();
+
+        let resource_path = if ctx.resource_path().to_string_lossy().to_string() != "" {
+            format!("{}/",ctx.resource_path().to_string_lossy().to_string())
+        } else {
+            String::new()
+        };
+
         let ocr = OAROCRBuilder::new(
-            "ocr/pp-ocrv5_mobile_det.onnx",
-            "ocr/pp-ocrv5_mobile_rec.onnx",
-            "ocr/ppocrv5_dict.txt",
+            format!("{}{}",resource_path,"ocr/pp-ocrv5_mobile_det.onnx").as_str(),
+            format!("{}{}",resource_path,"ocr/pp-ocrv5_mobile_rec.onnx").as_str(),
+            format!("{}{}",resource_path,"ocr/ppocrv5_dict.txt").as_str(),
         )
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            e.to_string()
+        })?;
 
         let image_path = Self::resolve_path(&ctx.workflow_path.join("files"), &param.image);
 
