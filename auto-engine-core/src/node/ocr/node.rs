@@ -40,91 +40,66 @@ impl NodeDefine for OcrNode {
 
     fn description(&self) -> Option<I18nValue> {
         Some(I18nValue {
-            zh: "对图片执行 OCR 识别，可配置语言、字符白名单及数字模式（需本地安装 Tesseract）。"
-                .to_string(),
-            en: "Run OCR on an image with language/whitelist/numeric options (requires local Tesseract)."
+            zh: "使用内置 PP-OCRv5 模型进行本地 OCR 识别，返回首个检测文本及置信度。".to_string(),
+            en: "Run OCR locally with the built-in PP-OCRv5 model, returning the first detected text and confidence."
                 .to_string(),
         })
     }
 
     fn output_schema(&self, _input: HashMap<String, serde_json::Value>) -> Vec<SchemaField> {
-        vec![SchemaField {
-            name: "text".to_string(),
-            field_type: FieldType::String,
-            item_type: None,
-            description: Some(I18nValue {
-                zh: "识别出的文本".to_string(),
-                en: "Recognized text".to_string(),
-            }),
-            enums: vec![],
-            default: None,
-            condition: None,
-        }]
-    }
-
-    fn input_schema(&self) -> Vec<SchemaField> {
         vec![
             SchemaField {
-                name: "image".to_string(),
-                field_type: FieldType::File,
+                name: "text".to_string(),
+                field_type: FieldType::String,
                 item_type: None,
                 description: Some(I18nValue {
-                    zh: "待识别的图片路径，支持绝对路径或相对工作流目录。".to_string(),
-                    en: "Image path for OCR, absolute or relative to workflow directory."
-                        .to_string(),
+                    zh: "首个识别出的文本".to_string(),
+                    en: "First recognized text".to_string(),
                 }),
                 enums: vec![],
                 default: None,
                 condition: None,
             },
             SchemaField {
-                name: "language".to_string(),
-                field_type: FieldType::String,
+                name: "confidence".to_string(),
+                field_type: FieldType::Number,
                 item_type: None,
                 description: Some(I18nValue {
-                    zh: "Tesseract 语言（如 eng, chi_sim）".to_string(),
-                    en: "Tesseract language (e.g. eng, chi_sim)".to_string(),
+                    zh: "对应文本的置信度得分".to_string(),
+                    en: "Confidence score for the detected text".to_string(),
                 }),
                 enums: vec![],
-                default: Some("eng".to_string()),
-                condition: None,
-            },
-            SchemaField {
-                name: "whitelist".to_string(),
-                field_type: FieldType::String,
-                item_type: None,
-                description: Some(I18nValue {
-                    zh: "可选字符白名单，留空表示不限制。".to_string(),
-                    en: "Optional character whitelist, empty to disable.".to_string(),
-                }),
-                enums: vec![],
-                default: Some("".to_string()),
-                condition: None,
-            },
-            SchemaField {
-                name: "numeric_mode".to_string(),
-                field_type: FieldType::Boolean,
-                item_type: None,
-                description: Some(I18nValue {
-                    zh: "启用 Tesseract 数字模式，提高数字识别准确率。".to_string(),
-                    en: "Enable Tesseract numeric mode to improve digit recognition.".to_string(),
-                }),
-                enums: vec![],
-                default: Some("false".to_string()),
-                condition: None,
-            },
-            SchemaField {
-                name: "digits_only".to_string(),
-                field_type: FieldType::Boolean,
-                item_type: None,
-                description: Some(I18nValue {
-                    zh: "仅保留 ASCII 数字，过滤其他字符。".to_string(),
-                    en: "Keep ASCII digits only, filter other characters.".to_string(),
-                }),
-                enums: vec![],
-                default: Some("false".to_string()),
+                default: None,
                 condition: None,
             },
         ]
+    }
+
+    fn input_schema(&self) -> Vec<SchemaField> {
+        vec![SchemaField {
+            name: "image".to_string(),
+            field_type: FieldType::File,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "待识别的图片路径，支持绝对路径或相对工作流 files 目录。".to_string(),
+                en: "Image path for OCR, absolute or relative to the workflow files directory."
+                    .to_string(),
+            }),
+            enums: vec![],
+            default: None,
+            condition: None,
+        },
+        SchemaField {
+            name: "digits_only".to_string(),
+            field_type: FieldType::Boolean,
+            item_type: None,
+            description: Some(I18nValue {
+                zh: "仅保留 ASCII 数字字符，过滤其他字符。".to_string(),
+                en: "Keep only ASCII digits, filtering out other characters.".to_string(),
+            }),
+            enums: vec![],
+            default: Some("false".to_string()),
+            condition: None,
+        }]
     }
 }

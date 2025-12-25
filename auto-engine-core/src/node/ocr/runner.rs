@@ -1,17 +1,15 @@
 use crate::context::Context;
 use crate::types::node::{NodeRunner, NodeRunnerControl, NodeRunnerController, NodeRunnerFactory};
-use leptess::{LepTess, Variable};
+use oar_ocr::prelude::{OAROCRBuilder, load_image};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env;
 use std::path::{Path, PathBuf};
-use tokio::task;
+use tauri::Manager;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OcrParams {
     pub image: String,
-    pub language: String,
-    pub whitelist: String,
-    pub numeric_mode: bool,
     pub digits_only: bool,
 }
 
@@ -31,6 +29,10 @@ impl OcrRunner {
             base.join(path)
         }
     }
+
+    fn extract_digits(&self, s: &str) -> String {
+        s.chars().filter(|c| c.is_ascii_digit()).collect()
+    }
 }
 
 #[async_trait::async_trait]
@@ -42,49 +44,44 @@ impl NodeRunner for OcrRunner {
         ctx: &Context,
         param: Self::ParamType,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+        let handle = ctx.app_handle.clone().unwrap();
+
+        let resource_path = if ctx.resource_path().to_string_lossy().to_string() != "" {
+            format!("{}/",ctx.resource_path().to_string_lossy().to_string())
+        } else {
+            String::new()
+        };
+
+        let ocr = OAROCRBuilder::new(
+            format!("{}{}",resource_path,"ocr/pp-ocrv5_mobile_det.onnx").as_str(),
+            format!("{}{}",resource_path,"ocr/pp-ocrv5_mobile_rec.onnx").as_str(),
+            format!("{}{}",resource_path,"ocr/ppocrv5_dict.txt").as_str(),
+        )
+        .build()
+        .map_err(|e| {
+            e.to_string()
+        })?;
+
         let image_path = Self::resolve_path(&ctx.workflow_path.join("files"), &param.image);
-        if !image_path.exists() {
-            return Err(format!(
-                "Image '{}' does not exist",
-                image_path.to_string_lossy()
-            ));
+
+        let image = load_image(&image_path).map_err(|e| e.to_string())?;
+        let results = ocr.predict(vec![image]).map_err(|e| e.to_string())?;
+        let mut res = HashMap::new();
+
+        for text_region in &results[0].text_regions {
+            if let Some((text, confidence)) = text_region.text_with_confidence() {
+                let text = if param.digits_only {
+                    self.extract_digits(text)
+                } else {
+                    text.to_string()
+                };
+                res.insert("text".to_string(), serde_json::json!(text));
+                res.insert("confidence".to_string(), serde_json::json!(confidence));
+                return Ok(Some(res));
+            }
         }
 
-        let task_param = param.clone();
-        let text = task::spawn_blocking(move || -> Result<String, String> {
-            let mut lt =
-                LepTess::new(None, &task_param.language).map_err(|e| format!("{:?}", e))?;
-
-            if !task_param.whitelist.is_empty() {
-                lt.set_variable(Variable::TesseditCharWhitelist, &task_param.whitelist)
-                    .map_err(|e| format!("{:?}", e))?;
-            }
-
-            if task_param.numeric_mode {
-                lt.set_variable(Variable::ClassifyBlnNumericMode, "1")
-                    .map_err(|e| format!("{:?}", e))?;
-            }
-
-            lt.set_image(image_path.to_string_lossy().as_ref())
-                .map_err(|e| format!("{:?}", e))?;
-            let text = lt.get_utf8_text().map_err(|e| format!("{:?}", e))?;
-
-            let cleaned = if task_param.digits_only {
-                text.chars()
-                    .filter(|c| c.is_ascii_digit())
-                    .collect::<String>()
-            } else {
-                text.trim().to_string()
-            };
-
-            Ok(cleaned)
-        })
-        .await
-        .map_err(|e| format!("Failed to run OCR: {}", e))??;
-
-        let mut res = HashMap::new();
-        res.insert("text".to_string(), serde_json::json!(text));
-        Ok(Some(res))
+        Ok(None)
     }
 }
 
