@@ -44,18 +44,16 @@ impl NodeRunner for OcrRunner {
         ctx: &Context,
         param: Self::ParamType,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
-        let handle = ctx.app_handle.clone().unwrap();
+        let mut resource_path_prefix = ctx.resource_path().to_string_lossy().replace(r"\\?\", "").to_string();
 
-        let resource_path = if ctx.resource_path().to_string_lossy().to_string() != "" {
-            format!("{}/",ctx.resource_path().to_string_lossy().to_string())
-        } else {
-            String::new()
-        };
+        if resource_path_prefix != "" {
+            resource_path_prefix = format!("{}/", resource_path_prefix);
+        }
 
         let ocr = OAROCRBuilder::new(
-            format!("{}{}",resource_path,"ocr/pp-ocrv5_mobile_det.onnx").as_str(),
-            format!("{}{}",resource_path,"ocr/pp-ocrv5_mobile_rec.onnx").as_str(),
-            format!("{}{}",resource_path,"ocr/ppocrv5_dict.txt").as_str(),
+            format!("{}{}", resource_path_prefix, "ocr/pp-ocrv5_mobile_det.onnx").as_str(),
+            format!("{}{}", resource_path_prefix, "ocr/pp-ocrv5_mobile_rec.onnx").as_str(),
+            format!("{}{}", resource_path_prefix, "ocr/ppocrv5_dict.txt").as_str(),
         )
         .build()
         .map_err(|e| {
