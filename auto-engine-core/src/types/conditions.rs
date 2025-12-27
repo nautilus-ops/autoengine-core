@@ -12,15 +12,25 @@ pub struct Conditions {
     pub not_exist: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ConditionResult {
+    pub pass: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 impl Conditions {
-    pub async fn check(&self, ctx: &Context) -> Result<bool, String> {
+    pub async fn check(&self, ctx: &Context) -> Result<ConditionResult, String> {
         if let Some(key) = &self.exist
             && key != ""
         {
             let values = ctx.string_value.read().await;
             if !values.contains_key(key) {
                 log::info!("{} does not exist, {:?}", key, values);
-                return Ok(false);
+                return Ok(ConditionResult {
+                    pass: false,
+                    reason: Some(format!("{} does not exist", key)),
+                });
             }
         }
 
@@ -30,25 +40,47 @@ impl Conditions {
             let values = ctx.string_value.read().await;
             if values.contains_key(key) {
                 log::info!("{} does not exist, {:?}", key, values);
-                return Ok(false);
+                return Ok(ConditionResult {
+                    pass: false,
+                    reason: Some(format!("{} does not exist", key)),
+                });
             }
         }
 
         if let Some(condition) = &self.condition
             && condition != ""
         {
-            let condition = utils::parse_variables(ctx, condition).await;
-            if condition == "" {
-                return Ok(false);
+            let result = utils::try_parse_variables(ctx, condition).await;
+            let condition = match result {
+                Ok(v) => v,
+                Err(err) => {
+                    log::error!("{}", err);
+                    return Ok(ConditionResult {
+                        pass: false,
+                        reason: Some(err.to_string()),
+                    });
+                }
+            };
+            if condition.trim() == "" {
+                return Ok(ConditionResult {
+                    pass: false,
+                    reason: Some(condition.clone()),
+                });
             }
             let result = evalexpr::eval_boolean(&condition)
                 .map_err(|err| format!("{} is not boolean", err))?;
             if !result {
                 log::info!("{} does not pass condition", condition);
-                return Ok(false);
+                return Ok(ConditionResult {
+                    pass: false,
+                    reason: Some(condition.clone()),
+                });
             }
         }
-        Ok(true)
+        Ok(ConditionResult {
+            pass: false,
+            reason: None,
+        })
     }
 }
 

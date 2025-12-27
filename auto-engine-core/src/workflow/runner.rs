@@ -257,11 +257,12 @@ fn handle_nod(
                 }
 
                 if let Some(condition) = node_schema.metadata.conditions {
-                    if !condition.check(&ctx).await? {
+                    let result = condition.check(&ctx).await?;
+                    if !result.pass {
                         emitter
                             .emit(
                                 NODE_EVENT,
-                                NodeEventPayload::skip::<String>(node_id.clone(), None),
+                                NodeEventPayload::skip(node_id.clone(), Some(result)),
                             )
                             .unwrap_or_default();
                         return Ok(None);

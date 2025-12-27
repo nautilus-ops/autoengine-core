@@ -26,6 +26,36 @@ pub async fn parse_variables(context: &Context, input: &str) -> String {
         .into_owned()
 }
 
+pub async fn try_parse_variables(context: &Context, input: &str) -> Result<String, String> {
+    let ctx = context.string_value.read().await;
+    let mut err: Option<String> = None;
+
+    let result = REGEX_PARSE_VARIABLES.replace_all(input, |caps: &regex::Captures| {
+        let var_name = &caps[1];
+
+        let variable = match ctx.get(var_name) {
+            Some(value) => serde_json::to_string(value)
+                .unwrap_or_default()
+                .trim_matches('"')
+                .to_string(),
+            None => {
+                err = Some(format!("variable `{}` not found", var_name));
+                String::new()
+            }
+        };
+        if variable == "" {
+            err = Some(format!("variable `{}` is empty", var_name));
+        }
+        variable
+    });
+
+    if let Some(e) = err {
+        Err(e)
+    } else {
+        Ok(result.into_owned())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
